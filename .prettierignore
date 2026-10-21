@@ -1,0 +1,8 @@
+.claude/
+backend/
+supabase/
+pnpm-lock.yaml
+packages/api-client/src/schema.d.ts
+packages/api-client/openapi.json
+**/.expo/
+**/dist/

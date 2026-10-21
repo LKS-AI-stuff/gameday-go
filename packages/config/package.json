@@ -1,0 +1,14 @@
+{
+  "name": "@gamedaygo/config",
+  "private": true,
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./eslint": "./eslint.config.js"
+  },
+  "dependencies": {
+    "eslint-config-expo": "~58.0.4"
+  },
+  "peerDependencies": {
+    "eslint": "^9"
+  }
+}

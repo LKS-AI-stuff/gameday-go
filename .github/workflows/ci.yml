@@ -1,0 +1,91 @@
+# CI (TDD §16). Mocks only: no provider secrets, no quota use (NFR-21).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v6
+        with:
+          working-directory: backend
+      - run: pnpm install --frozen-lockfile
+      - name: Format
+        run: pnpm format:check
+      - name: Lint, typecheck, test
+        run: pnpm turbo run lint typecheck test
+      - name: API client is up to date with the backend schema
+        env:
+          DATABASE_URL: postgresql+asyncpg://unused:unused@localhost:5432/unused
+        run: |
+          pnpm api:generate
+          git diff --exit-code -- packages/api-client
+      - name: Web build
+        working-directory: apps/web
+        env:
+          EXPO_PUBLIC_API_URL: http://localhost:8000
+          EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+        run: pnpm exec expo export --platform web
+      - name: Mobile config
+        working-directory: apps/mobile
+        run: pnpm exec expo config --type public > /dev/null
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: ci
+      DATABASE_URL: postgresql+asyncpg://gamedaygo_app:ci-only-password@localhost:5432/postgres
+      DATABASE_ADMIN_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          working-directory: backend
+      - run: uv sync --locked
+      - name: Format and lint
+        run: |
+          uv run ruff format --check .
+          uv run ruff check .
+      - name: Types
+        run: uv run mypy app migrations tests
+      - name: Bootstrap database role
+        run: uv run python -m app.cli bootstrap-db
+      - name: Migrations round trip
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade -1
+          uv run alembic upgrade head
+      - name: Tests (unit, integration, database hardening)
+        run: uv run pytest

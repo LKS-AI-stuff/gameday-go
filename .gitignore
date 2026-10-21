@@ -1,0 +1,40 @@
+# Secrets (TDD §8.2): only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# Visual reference only, not ours to redistribute (TDD §4.4)
+.claude/docs/Template/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Node / Turborepo / Expo
+node_modules/
+.turbo/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+apps/mobile/ios/
+apps/mobile/android/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/

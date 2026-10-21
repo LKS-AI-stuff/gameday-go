@@ -1,0 +1,28 @@
+{
+  "name": "@gamedaygo/shared",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@gamedaygo/config": "workspace:*",
+    "@types/jest": "30.0.0",
+    "eslint": "9.39.5",
+    "expo": "58.0.16",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.11",
+    "react": "19.3.0",
+    "react-native": "0.88.0",
+    "typescript": "~6.0.3"
+  },
+  "jest": {
+    "preset": "jest-expo/node"
+  }
+}

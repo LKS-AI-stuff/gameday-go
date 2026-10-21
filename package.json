@@ -1,0 +1,23 @@
+{
+  "name": "gameday-go",
+  "private": true,
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "api:generate": "pnpm --filter @gamedaygo/api-client generate",
+    "supabase": "supabase"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "supabase": "2.121.0",
+    "turbo": "2.11.8"
+  }
+}

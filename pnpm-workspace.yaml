@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Install scripts are denied unless listed here.
+allowBuilds:
+  # The Supabase CLI npm package downloads its binary in a postinstall script.
+  supabase: true
+  # These ship prebuilt binaries; their install scripts are only fallbacks.
+  "@parcel/watcher": false
+  unrs-resolver: false

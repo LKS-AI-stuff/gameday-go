@@ -1,0 +1,5 @@
+{
+  "extends": ["expo/tsconfig.base", "@gamedaygo/config/tsconfig.base.json"],
+  "compilerOptions": { "types": ["jest"] },
+  "include": ["src"]
+}
