@@ -528,7 +528,7 @@ Technical acceptance criteria (provider usage, sample-data replay, automated tes
 
 ## 13. Release Plan
 
-Milestones **M0–M5 are built and tested entirely on a developer's machine**, with no hosting accounts, domain or app-store accounts. Everything needed only to run the public demo is in **M6**. Technical contents of each milestone are in the TDD (§19).
+Milestones **M0–M5 are built and tested entirely on a developer's machine**, with no hosting accounts, domain or app-store accounts. Everything needed only to run the public demo is in **M6**. Each milestone's requirements checklist is in `.claude/requirements/`, and its technical design, status and test steps in `.claude/technical-designs/` (indexed in TDD §19).
 
 | Milestone | What users can do at the end | Exit criteria |
 |---|---|---|

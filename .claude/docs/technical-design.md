@@ -112,7 +112,13 @@ gameday-go/
 │   ├── pyproject.toml
 │   └── Dockerfile
 ├── supabase/                   # Supabase CLI project (config.toml) for the local stack
-├── .claude/docs/
+├── .claude/
+│   ├── docs/                   # BRD, this TDD, UI/UX design
+│   ├── requirements/           # Requirements per milestone (m<N>-*.md) and later features
+│   ├── technical-designs/      # Designs generated from requirements; implemented ones hold test guides
+│   ├── skills/                 # generate-technical-design, implement-technical-design
+│   ├── hooks/                  # Secret-write guard (PreToolUse), stale-backend killer (Stop)
+│   └── settings.json           # Registers the hooks
 ├── .github/workflows/ci.yml
 ├── turbo.json
 ├── pnpm-workspace.yaml
@@ -978,7 +984,7 @@ Allowlisted names only, no free-text properties, no device identifiers, no email
 | E2E mobile | Maestro on simulator/emulator | Same flow, plus a local reminder fired in a fast-forwarded test configuration |
 
 **CI (GitHub Actions)** runs on every PR:
-1. `pnpm install`, then `turbo lint typecheck test` for all TS packages.
+1. `pnpm install`, Prettier format check, then `turbo lint typecheck test` for all TS packages and apps.
 2. `uv sync`, `ruff`, `mypy`, `pytest` (unit, integration, contract, agent with fake LLM) against a Postgres service container.
 3. `alembic upgrade head` → `downgrade -1` → `upgrade head` on an empty DB.
 4. OpenAPI export plus api-client regeneration with a diff check.
@@ -1000,7 +1006,7 @@ cd backend && uv sync
 uv run python -m app.cli bootstrap-db  # backend role + schema app (once per database)
 uv run alembic upgrade head
 uv run python -m app.cli seed        # teams, rivalries, ZIP centroids (M1)
-uv run python -m app.cli sync-schedule && uv run python -m app.cli sync-standings   # M1
+uv run python -m app.cli sync-schedule   # M1 (sync-standings arrives in M4)
 uv run uvicorn app.main_api:create_app --factory --reload --host 0.0.0.0   # API on :8000
 uv run python -m app.main_worker                            # worker, scores mode auto (M4)
 pnpm --filter @gamedaygo/web dev     # Expo web on :8081
@@ -1030,15 +1036,19 @@ pnpm --filter @gamedaygo/mobile dev  # Expo for phones/simulators on :8082
 
 ## 19. Implementation Plan by Milestone
 
-| Milestone | Backend | Frontend | Done when |
+Each milestone's requirements (what must be built, as a checklist citing this document, the BRD and the UI/UX doc) are in `.claude/requirements/`. `/generate-technical-design` turns a requirements file into a technical design in `.claude/technical-designs/`, grounded in the current code; `/implement-technical-design` builds it and records what was implemented and how to test it, including database queries. Feature requirements beyond the milestones follow the same path.
+
+| Milestone | Requirements | Technical design | Status |
 |---|---|---|---|
-| **M0** | Repo, uv project, settings, logging, http layer skeleton, DB + `app` schema with hardening (§6.1) and both exposure tests, Data API disabled in local config, auth dependency, `users`, health, CI | pnpm/turbo, two Expo shells, `packages/ui` tokens + theme, auth screens, api-client generation | Sign up/in/out on web + mobile against the local stack; CI green |
-| **M1** | Seed data (ZIP + place centroids, rivalries, overrides), preferences, ZIP lookup, API-Sports adapter (season games, teams), seasons + rollover, planning window, `schedule_sync`, schedule tags, games API, app events | Onboarding, home, schedule, game detail | J1, J2; AC-47, AC-49 |
-| **M2** | Budgets, Ticketmaster + Places adapters, matching, budget/travel rules, suitability | Ticket + venue sections on game detail | Tools return rule-compliant results; contract tests |
-| **M3** | LangGraph graph, tools, grounding, SSE, traces, proposals, plans, eval suite, model selection | Plan chat, Plan Card, trace timeline, My Game Days | J3–J5; AC-48; eval suite 0 violations |
-| **M4** | Worker + advisory lock, `score_tick`, hourly polling, replay + recording, standings + record tags | Live now, score badges, records, sample banner | J8; AC-30–33, 36–37, 41–46 |
-| **M5** | Watches + jobs, alert policy, outbox, Resend adapter + allowlist, unsubscribe, reminders feed, schedule-change alerts | Watches screen, inbox, settings categories, local reminders | J6–J7; AC-20–25, 35, 39–40 |
-| **M6** | Dockerfile, Railway, hosted Supabase, Resend domain + webhook, social sign-in providers, demo protections, production guards | EAS builds, deep links, social sign-in + Age confirmation screen, accessibility and polish | All Appendix A scenarios on hosted web + one mobile build |
+| M0: Foundation | (BRD §13) | `m0-foundation.md` | Code complete; exit pending iOS/Android manual tests and CI on GitHub |
+| M1: Preferences and schedule | `m1-preferences-and-schedule.md` | not yet | Planned |
+| M2: Tickets and venues | `m2-tickets-and-venues.md` | not yet | Planned |
+| M3: Agent and trace | `m3-agent-and-trace.md` | not yet | Planned |
+| M4: Scores and standings | `m4-scores-and-standings.md` | not yet | Planned |
+| M5: Watches and notifications | `m5-watches-and-notifications.md` | not yet | Planned |
+| M6: Public demo | `m6-public-demo.md` | not yet | Planned |
+
+M0–M5 run entirely on a developer's machine (§17); hosting is only in M6.
 
 ## 20. Technical Decisions and Open Items
 

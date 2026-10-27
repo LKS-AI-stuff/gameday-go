@@ -6,7 +6,7 @@ GameDay Go is not affiliated with the NFL or any team.
 
 ## Status
 
-Milestone **M0 (foundation)**: email sign-up with verification, sign-in and sign-out on web and mobile, against a local stack. See `.claude/docs/technical-design.md` §19 for the milestone plan.
+Milestone **M0 (foundation)** is code complete. Milestone requirements are in `.claude/requirements/`; each milestone's technical design, with its status and test steps (including database queries), is in `.claude/technical-designs/`. TDD §19 has the index.
 
 ## Stack
 
@@ -59,3 +59,5 @@ uv run pytest -m supabase              # Data API exposure test against the loca
 - `.claude/docs/business-requirements.md`: what and why
 - `.claude/docs/technical-design.md`: how it's built
 - `.claude/docs/ui-ux-design.md`: screens and behavior
+- `.claude/requirements/`: requirements per milestone (and later features)
+- `.claude/technical-designs/`: technical designs, with status and test guide once implemented
