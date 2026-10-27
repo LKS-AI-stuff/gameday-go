@@ -6,7 +6,6 @@ import { PaperProvider } from "react-native-paper";
 
 import { AuthProvider } from "./auth/AuthProvider";
 import { paperTheme } from "./theme/paperTheme";
-import { useScheme } from "./theme/useTokens";
 
 interface AppProvidersProps {
   supabase: SupabaseClient;
@@ -18,8 +17,6 @@ interface AppProvidersProps {
 
 /** Everything both app shells wrap their routes in. */
 export function AppProviders({ supabase, apiUrl, emailRedirectTo, children }: AppProvidersProps) {
-  const scheme = useScheme();
-  const theme = useMemo(() => paperTheme(scheme), [scheme]);
   const [queryClient] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } }),
   );
@@ -38,7 +35,7 @@ export function AppProviders({ supabase, apiUrl, emailRedirectTo, children }: Ap
     <QueryClientProvider client={queryClient}>
       <ApiClientProvider client={apiClient}>
         <AuthProvider supabase={supabase} emailRedirectTo={emailRedirectTo}>
-          <PaperProvider theme={theme}>{children}</PaperProvider>
+          <PaperProvider theme={paperTheme}>{children}</PaperProvider>
         </AuthProvider>
       </ApiClientProvider>
     </QueryClientProvider>

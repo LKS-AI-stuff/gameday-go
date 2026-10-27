@@ -4,9 +4,9 @@
 |---|---|
 | **Product** | GameDay Go |
 | **Document type** | Technical Design Document (TDD) |
-| **Version** | 0.7 (draft) |
-| **Date** | 2026-10-21 |
-| **Implements** | `.claude/docs/business-requirements.md` v0.15 (the BRD) |
+| **Version** | 0.8 (draft) |
+| **Date** | 2026-10-27 |
+| **Implements** | `.claude/docs/business-requirements.md` v0.16 (the BRD) |
 | **Audience** | Engineers, AI coding agents, reviewers |
 
 This document describes **how** GameDay Go is built. Requirement IDs (FR-, BR-, AG-, NFR-, AC-) refer to the BRD, which stays the source of truth for behavior. Items marked **[verify]** are details that must be confirmed against provider documentation or real responses during the milestone that integrates them. Do not hard-code them before then.
@@ -150,7 +150,7 @@ The folders under `packages/` are **internal pnpm workspace packages**. They are
 | Client state | Zustand only for cross-screen UI state (e.g. active agent session draft, onboarding progress) |
 | Forms | React Hook Form + Zod resolvers (schemas in `packages/shared`) |
 | UI components | **React Native Paper** (Material Design 3) themed with GameDay Go tokens, plus React Native's built-in core components (`View`, `Text`, `Pressable`, `ScrollView`, `Image`) for custom components. No additional headless/primitive UI library. Icons: `@expo/vector-icons` (MaterialCommunityIcons, Paper's default) |
-| Styling | `StyleSheet` + design tokens (colors, spacing, typography, radii) feeding both custom components and the Paper theme; light/dark themes (NFR-5). Details in §4.4 |
+| Styling | `StyleSheet` + design tokens (colors, spacing, typography, radii) feeding both custom components and the Paper theme; one dark theme on every platform (NFR-5); apps set `userInterfaceStyle: "dark"`. Details in §4.4 |
 | Motion | `react-native-reanimated` (entering/layout animations), honoring the OS reduce-motion setting |
 | Fonts | Oswald (headings) and Open Sans (body) bundled via `@expo-google-fonts/*` and `expo-font` (SIL Open Font License; no runtime call to Google Fonts) |
 | Auth | `@supabase/supabase-js` for auth only. Session storage: `expo-secure-store` on native, `localStorage` on web. From M6, social sign-in on native uses `expo-auth-session` + `expo-web-browser` (OAuth redirect) |
@@ -192,23 +192,29 @@ Web gets a wider layout with a side navigation rail. Mobile uses bottom tabs (NF
 
 The reference in `.claude/docs/Template/` is a Nicepage preview of a "Modern Football Team" template; the page itself loads from nicepage.io. Its look: dark near-black sections, white content cards, an orange-red accent, condensed uppercase headings, full-bleed photos under a dark overlay, a three-card "upcoming matches" row, a standings table, and content that fades and rises in on scroll. GameDay Go adopts the **direction**, not the assets: template images (Freepik/Nicepage) and its logo are not reused, and no team logos are used (A12).
 
-**Color tokens** (template values, mapped to roles):
+**Color tokens** (one dark theme, NFR-5; template values mapped to roles):
 
-| Token | Light theme | Dark theme | Template source / use |
-|---|---|---|---|
-| `color.primary` | `#F0502A` | `#F0502A` | Template accent (palette 2). Buttons, active tab, key highlights |
-| `color.onPrimary` | `#111111` | `#111111` | Text and icons on primary fills. Dark text on `#F0502A` passes AA at all sizes; white (about 3.3:1) is not used (adopted from the mockup) |
-| `color.primaryText` | `#C23A16` | `#FF7A57` | Primary-colored small text; meets WCAG AA 4.5:1 on every surface (NFR-3) |
-| `color.background` | `#F5F5F5` | `#111111` | Template `#111111` text/background |
-| `color.surface` | `#FFFFFF` | `#1A1A1A` | Template white cards / grey-90 sections |
-| `color.surfaceRaised` | `#FFFFFF` + shadow | `#262626` | Cards on dark backgrounds |
-| `color.outline` | `#D9D9D9` | `#333333` | Template grey-80 |
-| `color.text` / `color.textMuted` | `#111111` / `#5C5C5C` | `#FFFFFF` / `#B9C1CC` | Template body and muted greys |
-| `color.info` | `#1051ED` | `#6690F4` | Template palette 1 (blue), lightened in dark theme for AA on raised cards: links, info banners |
-| `color.live` | `#F1C50E` | `#F1C50E` | Template palette 3 (yellow): "Live now", warnings; dark text on it |
-| `color.success` | `#137A74` | `#2CCCC4` | Template palette 4 (teal), darkened in light theme so small text meets AA (about 5:1 on white): positive states (alert active, within budget) |
-| `color.danger` | `#C62828` | `#F26360` | Errors, destructive actions |
-| `color.overlay` | `rgba(0,0,0,0.5)` | `rgba(0,0,0,0.5)` | Template hero overlay |
+| Token | Value | Template source / use |
+|---|---|---|
+| `color.primary` | `#F0502A` | Template accent (palette 2). Buttons, active tab, key highlights |
+| `color.onPrimary` | `#111111` | Text and icons on primary fills (passes AA at all sizes; white, about 3.3:1, is not used) |
+| `color.primaryText` | `#FF7A57` | Primary-colored small text and links |
+| `color.hero` | `#000000` | Hero bands, under the field-line pattern |
+| `color.background` | `#111111` | Template `#111111` sections; every screen |
+| `color.surface` | `#1A1A1A` | Cards and panels (template grey-90 sections) |
+| `color.surfaceRaised` | `#262626` | Sheets and raised elements |
+| `color.chrome` | `#0B0B0B` | Bottom tabs and app chrome |
+| `color.outline` | `#333333` | Decorative borders and dividers only (template grey-80) |
+| `color.outlineStrong` | `#767676` | Form-field borders (at least 3:1 on every surface, WCAG 1.4.11) |
+| `color.fieldLine` | `#FFFFFF` at 16% | Field-line pattern (yard lines every 40 px, sidelines, hash marks) |
+| `color.text` / `color.textMuted` / `color.textSubtle` | `#FFFFFF` / `#B9C1CC` / `#8E96A3` | Body, secondary text, captions (sources, timestamps) |
+| `color.info` | `#6690F4` | Template palette 1 (blue), lightened for AA on raised cards: links, info banners |
+| `color.live` | `#F1C50E` | Template palette 3 (yellow): "Live now", warnings; dark text on it |
+| `color.success` | `#2CCCC4` | Template palette 4 (teal): positive states (alert active, within budget) |
+| `color.danger` | `#F26360` | Errors, destructive actions |
+| `color.overlay` | `rgba(0,0,0,0.6)` | Sheet and dialog backdrop |
+| `color.scrim` | `rgba(0,0,0,0.35)` | Over the background photo (`AppBackground`) |
+| `color.panelGlass` | `rgba(17,17,17,0.9)` | Panels over the photo; text on them passes AA even with pure white behind |
 
 **Typography:** Oswald for display and headings (uppercase, like the template), Open Sans for body and UI text. The template's web sizes (3.75–6 rem headings) are scaled for phones:
 
@@ -223,7 +229,9 @@ The reference in `.claude/docs/Template/` is a Nicepage preview of a "Modern Foo
 | `type.caption` | Open Sans 400 | 13 / 18 | "Updated 4 min ago", sources |
 | `type.score` | Oswald 700, tabular numbers | 32 / 36 | Scores |
 
-All text tokens are checked against WCAG AA on every surface by `packages/ui/src/theme/tokens.test.ts`.
+All text tokens are checked against WCAG AA on every surface (including a glass panel over pure white), and form-field borders against 3:1, by `packages/ui/src/theme/tokens.test.ts`.
+
+**Background photo:** `AppBackground` (core `ImageBackground`, no extra library) renders, fixed behind every `Screen`, `packages/ui/assets/stadium-night.jpg` (852 × 1846, about 140 KB) when the window is taller than wide and `stadium-night-wide.jpg` (1672 × 941, about 160 KB) otherwise, chosen with `useWindowDimensions` so it switches on resize or rotation, with `color.scrim` over it. Text that isn't in the dark top area goes on a `Panel` with `variant="glass"` (UI/UX §4).
 
 **Shape and spacing:** the template uses square corners, so Paper `roundness` is set to 2 (near-square cards and buttons). Spacing scale: 4, 8, 12, 16, 24, 32, 48. Cards use 16 px padding on mobile, 24 px on web.
 
@@ -237,7 +245,7 @@ All text tokens are checked against WCAG AA on every surface by `packages/ui/src
 
 | Template element | GameDay Go component | Built with |
 |---|---|---|
-| Hero (full-bleed photo, dark overlay, huge uppercase title) | `MatchupHero` on game detail: dark gradient background (no photo initially), matchup in `type.display`, kickoff, venue, tags | Core primitives + tokens |
+| Hero (full-bleed photo, dark overlay, huge uppercase title) | `Hero` band (black with the `FieldLines` pattern) on game detail as `MatchupHero`, and as the header of the auth screens; matchup in `type.display`, kickoff, venue, tags | Core primitives + tokens |
 | "Upcoming matches" cards (date / Team vs Team / venue / Kickoff time) | `GameCard` in Home and Schedule: date label, matchup with records, venue, kickoff in user time zone, tags, planning status | Paper `Card` + primitives |
 | Orange-red highlighted block | `PlanCard` recommended option, primary call to action | Paper `Card`, `Button` |
 | Standings table (pos, team, W, L, T, PCT, PF, PA…) | `RecordBadge` (W–L–T) and division rank on game detail; no full standings screen (BRD future roadmap) | Paper `Chip` / primitives |
@@ -245,7 +253,7 @@ All text tokens are checked against WCAG AA on every surface by `packages/ui/src
 
 **Paper components used:** `Appbar`, `Card`, `Button`, `IconButton`, `Chip` (tags, filters), `SegmentedButtons` (Low/Medium/High, Less/Medium/More in onboarding), `TextInput`, `List.Item`, `Banner` ("Sample data", "Scores paused"), `Snackbar`, `Dialog` (confirmations, account deletion), `ActivityIndicator`, `ProgressBar`, `Divider`, `Badge` (inbox count). Tab bars use Expo Router tabs styled with the tokens.
 
-**Custom components** (core primitives + tokens): `GameCard`, `MatchupHero`, `ScoreStrip`, `RecordBadge`, `TagChip`, `PlanCard`, `TraceTimeline`, `ChatComposer` (with turns-remaining hint), `PlanningWindowNotice`, `SampleDataBadge`.
+**Custom components** (core primitives + tokens): `AppBackground`, `Hero`, `FieldLines`, `Panel`, `GameCard`, `MatchupHero`, `ScoreStrip`, `RecordBadge`, `TagChip`, `PlanCard`, `TraceTimeline`, `ChatComposer` (with turns-remaining hint), `PlanningWindowNotice`, `SampleDataBadge`.
 
 Screen-by-screen layouts, component specs and all loading, empty and error states are in `.claude/docs/ui-ux-design.md`.
 
@@ -1040,7 +1048,7 @@ Each milestone's requirements (what must be built, as a checklist citing this do
 
 | Milestone | Requirements | Technical design | Status |
 |---|---|---|---|
-| M0: Foundation | (BRD §13) | `m0-foundation.md` | Code complete; exit pending iOS/Android manual tests and CI on GitHub |
+| M0: Foundation | (BRD §13) | `m0-foundation.md` | Code complete; CI green; exit pending manual tests on web, iOS and Android |
 | M1: Preferences and schedule | `m1-preferences-and-schedule.md` | not yet | Planned |
 | M2: Tickets and venues | `m2-tickets-and-venues.md` | not yet | Planned |
 | M3: Agent and trace | `m3-agent-and-trace.md` | not yet | Planned |
@@ -1091,7 +1099,7 @@ M0–M5 run entirely on a developer's machine (§17); hosting is only in M6.
 |---|---|---|
 | T2 | Confirm `expo/fetch` streaming for SSE on native with the pinned Expo SDK (58) | M3 |
 | T4 | API-Sports endpoint paths, NFL league ID, status codes, response fields, and which team/venue fields (division, venue city/state) are available (contract fixtures) | M1 |
-| T10 | Confirm the proposed defaults for open design questions UX1–UX5 in `.claude/docs/ui-ux-design.md` | Before M1 UI work |
+| T10 | Confirm the proposed defaults for open design questions UX1, UX4 and UX5 in `.claude/docs/ui-ux-design.md` | Before M1 UI work |
 | T11 | Social sign-in (M6): offering Google sign-in on iOS generally requires Sign in with Apple for App Store and external TestFlight review. Decide the providers (Google only on web/Android, or Google + Apple) and configure them in the hosted Supabase project | M6 |
 | T5 | Ticketmaster matching parameters and team attraction IDs | M2 |
 | T6 | Google Places endpoint choice and field mask vs. pricing tier | M2 |

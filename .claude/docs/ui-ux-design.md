@@ -4,9 +4,9 @@
 |---|---|
 | **Product** | GameDay Go |
 | **Document type** | UI/UX Design |
-| **Version** | 0.3 (draft) |
-| **Date** | 2026-10-21 |
-| **Builds on** | BRD v0.15 (`business-requirements.md`), Technical Design v0.7 §4 (`technical-design.md`) |
+| **Version** | 0.4 (draft) |
+| **Date** | 2026-10-27 |
+| **Builds on** | BRD v0.16 (`business-requirements.md`), Technical Design v0.8 §4 (`technical-design.md`) |
 | **Visual reference** | `.claude/docs/Template/` (Nicepage "Modern Football Team" template): direction only, no assets reused |
 
 This document defines what each screen shows, how it's laid out, how it behaves, and what it looks like in every state (loading, empty, error, limited). Design tokens (colors, type, spacing, motion) are defined in Technical Design §4.4 and referenced here by name (e.g. `color.primary`, `type.h2`). Requirement IDs refer to the BRD.
@@ -82,13 +82,15 @@ Tab labels use `type.label` (Oswald, uppercase). The active tab uses `color.prim
 
 Full token tables are in Technical Design §4.4. In practice:
 
-- **Surfaces:** dark theme is the signature look (template style): `color.background` `#111111`, cards on `color.surface` `#1A1A1A`. Light theme mirrors it with white cards on `#F5F5F5`. Theme follows the OS by default; users can override in Settings.
+- **Surfaces:** one dark theme everywhere (NFR-5), whatever the device's light/dark setting: screens on `color.background` `#111111`, cards on `color.surface` `#1A1A1A` with a thin `color.outline` border, app chrome and bottom tabs on `color.chrome` `#0B0B0B`, and hero bands on `color.hero` (black).
 - **Accent:** `color.primary` (`#F0502A`) for the main action, the recommended option and the active tab. Never more than one primary button per screen. Text and icons on a primary fill use `color.onPrimary` (`#111111`), which passes AA at every size (white on this orange is only about 3.3:1).
 - **Terminology:** users see **"Alerts"** ("Set an alert", the Alerts tab). "Watch" remains the internal term in code, the API and the BRD.
 - **Semantic colors:** `color.live` (yellow) only for in-progress games; `color.success` (teal) for "within budget", "Alert active"; `color.info` (blue) for links and info banners; `color.danger` for errors and destructive actions.
 - **Typography:** Oswald uppercase for screen titles, section titles, labels and scores; Open Sans for everything people read in sentences.
 - **Shape:** near-square corners (Paper roundness 2), thin `color.outline` dividers, minimal shadows.
-- **Imagery:** no photos and no team logos in the MVP (A12). Heroes use a dark gradient with a subtle field-line pattern drawn in code. Team identity comes from text (abbreviation + name).
+- **Background photo:** every screen sits on a fixed night-stadium photo (floodlights, turf, a football; no logos or people) under a 35% black scrim (`color.scrim`). It comes in two crops of the same scene: tall (`stadium-night.jpg`) when the window is taller than it is wide (phones, narrow browser windows), and wide (`stadium-night-wide.jpg`) otherwise (desktop web, tablets in landscape), switching live as the window is resized, so the whole scene is visible either way. Its upper half is dark enough for text; the lower half is not, so body content (forms, cards, actions, captions) always sits on panels (`color.panelGlass`, 90% opaque), and only hero text and section titles near the top sit directly on the photo. In the wide crop the centered content column stays dark down to the yard line near the bottom.
+- **Imagery:** no other photos and no team logos in the MVP (A12). Over the photo, the auth screens' hero is transparent. Elsewhere, hero bands (game detail) are black with the template's football-field pattern drawn in code: yard lines every 40 px, two sidelines at 15% from each edge, and a row of hash marks, all in white at 16% opacity, decorative and hidden from screen readers. Team identity comes from text (abbreviation + name).
+- **Wordmark:** "GAMEDAY GO" in Oswald Bold, with "GO" in `color.primary` (UX1): display size in heroes, 24 px in the app bar.
 - **Iconography:** MaterialCommunityIcons (Paper's default set), outlined style, 24 px.
 
 ## 5. Global Patterns
@@ -671,8 +673,6 @@ SETTINGS
     Game-day reminders    [on]
     Weekly digest         (High only)
     Time zone             America/Chicago ›
-  APPEARANCE
-    Theme                 System / Dark / Light
   ACCOUNT
     Email                 ben@example.com
     Sign out
@@ -775,8 +775,8 @@ Tapping opens the saved plan.
 | ID | Question | Proposed default |
 |---|---|---|
 | UX1 | Wordmark / app icon | Text wordmark "GAMEDAY GO" in Oswald; icon: orange-red square with a white "GG" monogram. Designed in M0 |
-| UX2 | Hero imagery | No photos in MVP (gradient + field lines). Revisit with properly licensed generic stadium photos later |
-| UX3 | Default theme | Follow the OS; dark theme is the reference look for screenshots and the demo |
+| UX2 | Imagery | Decided: the night-stadium background photo behind every screen, provided by the product owner; game-detail heroes keep the black band with drawn field lines |
+| UX3 | Theme | Decided: one dark theme on every platform, regardless of the device setting (NFR-5); no light theme or theme setting |
 | UX4 | Team color accents | None (A12: neutral styling); team identity by text only |
 | UX5 | Empty-state illustrations | Icons only in MVP |
 | UX6 | Visual mockups | Done: clickable mockup of Home, Schedule, Game detail, Plan session, Trace and My Game Days (dark theme), approved 2026-10-14: https://claude.ai/artifact/8URqVFmbGDbwAC3sSk8saS |

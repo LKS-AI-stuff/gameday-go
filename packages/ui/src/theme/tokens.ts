@@ -1,61 +1,70 @@
 // Design tokens (TDD §4.4). Every color, size and duration in the UI comes from here.
 
-export type ColorScheme = "light" | "dark";
-
+// One dark theme on every platform, whatever the device's light/dark setting (NFR-5).
+// Values follow the approved mockup and the reference template's dark sections.
 export interface ColorTokens {
   primary: string;
   onPrimary: string;
   primaryText: string;
+  /** Hero bands and the auth screens' header (template: black under a field-line pattern). */
+  hero: string;
   background: string;
   surface: string;
   surfaceRaised: string;
+  /** Bottom navigation and app chrome. */
+  chrome: string;
+  /** Decorative borders and dividers only (cards, rows). */
   outline: string;
+  /** Form-field borders: at least 3:1 against every surface (WCAG 1.4.11). */
+  outlineStrong: string;
+  /** Lines of the field pattern, drawn at `fieldLineOpacity`. */
+  fieldLine: string;
   text: string;
   textMuted: string;
+  /** De-emphasized captions: sources, timestamps, "@" in matchups. */
+  textSubtle: string;
   info: string;
   live: string;
   onLive: string;
   success: string;
   danger: string;
   overlay: string;
+  /** Over the background photo, so it stays vivid but recedes. */
+  scrim: string;
+  /** Panels over the background photo: text on them never depends on what's behind. */
+  panelGlass: string;
 }
 
-export const colors: Record<ColorScheme, ColorTokens> = {
-  light: {
-    primary: "#F0502A",
-    onPrimary: "#111111",
-    primaryText: "#C23A16",
-    background: "#F5F5F5",
-    surface: "#FFFFFF",
-    surfaceRaised: "#FFFFFF",
-    outline: "#D9D9D9",
-    text: "#111111",
-    textMuted: "#5C5C5C",
-    info: "#1051ED",
-    live: "#F1C50E",
-    onLive: "#111111",
-    success: "#137A74",
-    danger: "#C62828",
-    overlay: "rgba(0,0,0,0.5)",
-  },
-  dark: {
-    primary: "#F0502A",
-    onPrimary: "#111111",
-    primaryText: "#FF7A57",
-    background: "#111111",
-    surface: "#1A1A1A",
-    surfaceRaised: "#262626",
-    outline: "#333333",
-    text: "#FFFFFF",
-    textMuted: "#B9C1CC",
-    info: "#6690F4",
-    live: "#F1C50E",
-    onLive: "#111111",
-    success: "#2CCCC4",
-    danger: "#F26360",
-    overlay: "rgba(0,0,0,0.5)",
-  },
+export const colors: ColorTokens = {
+  primary: "#F0502A",
+  onPrimary: "#111111",
+  primaryText: "#FF7A57",
+  hero: "#000000",
+  background: "#111111",
+  surface: "#1A1A1A",
+  surfaceRaised: "#262626",
+  chrome: "#0B0B0B",
+  outline: "#333333",
+  outlineStrong: "#767676",
+  fieldLine: "#FFFFFF",
+  text: "#FFFFFF",
+  textMuted: "#B9C1CC",
+  textSubtle: "#8E96A3",
+  info: "#6690F4",
+  live: "#F1C50E",
+  onLive: "#111111",
+  success: "#2CCCC4",
+  danger: "#F26360",
+  overlay: "rgba(0,0,0,0.6)",
+  scrim: "rgba(0,0,0,0.35)",
+  panelGlass: "rgba(17,17,17,0.9)",
 };
+
+/** The field-line pattern (UI/UX §4): yard lines every 40 px, at 16% opacity. */
+export const fieldPattern = {
+  lineOpacity: 0.16,
+  yardSpacing: 40,
+} as const;
 
 export const fontFamily = {
   display: "Oswald_700Bold",

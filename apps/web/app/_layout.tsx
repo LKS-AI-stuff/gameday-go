@@ -31,7 +31,7 @@ export default function RootLayout() {
       // The verification link returns to this web app, which then signs the user in.
       emailRedirectTo={globalThis.location?.origin}
     >
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <RootNavigator />
     </AppProviders>
   );

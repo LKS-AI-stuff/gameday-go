@@ -1,16 +1,26 @@
 import type { ComponentProps } from "react";
 import { Controller, type Control, type FieldValues, type Path } from "react-hook-form";
-import { View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { HelperText, TextInput } from "react-native-paper";
 
-type TextInputProps = Omit<ComponentProps<typeof TextInput>, "value" | "onChangeText" | "error">;
+import { colors, spacing, type } from "../theme/tokens";
+
+type TextInputProps = Omit<
+  ComponentProps<typeof TextInput>,
+  "value" | "onChangeText" | "error" | "label"
+>;
 
 interface FormTextFieldProps<T extends FieldValues> extends TextInputProps {
   control: Control<T>;
   name: Path<T>;
+  label: string;
 }
 
-/** Paper text input bound to React Hook Form, with the error shown inline under the field. */
+/**
+ * Paper text input bound to React Hook Form, with a fixed label above it and the error inline
+ * under it. The label sits outside the field (not floating inside it) because browser autofill
+ * fills values without notifying the app, which would leave a floating label overlapping them.
+ */
 export function FormTextField<T extends FieldValues>({
   control,
   name,
@@ -22,18 +32,21 @@ export function FormTextField<T extends FieldValues>({
       control={control}
       name={name}
       render={({ field: { value, onChange, onBlur }, fieldState: { error } }) => (
-        <View>
+        <View style={styles.field}>
+          <Text style={styles.label} accessibilityElementsHidden importantForAccessibility="no">
+            {label}
+          </Text>
           <TextInput
             mode="outlined"
-            label={label}
             value={(value as string | undefined) ?? ""}
             onChangeText={onChange}
             onBlur={onBlur}
             error={!!error}
-            accessibilityLabel={typeof label === "string" ? label : undefined}
+            accessibilityLabel={label}
+            dense
             {...inputProps}
           />
-          <HelperText type="error" visible={!!error}>
+          <HelperText type="error" visible={!!error} style={styles.helper}>
             {error?.message}
           </HelperText>
         </View>
@@ -41,3 +54,9 @@ export function FormTextField<T extends FieldValues>({
     />
   );
 }
+
+const styles = StyleSheet.create({
+  field: { gap: spacing.xs },
+  label: { ...type.label, color: colors.textMuted },
+  helper: { paddingHorizontal: 0 },
+});

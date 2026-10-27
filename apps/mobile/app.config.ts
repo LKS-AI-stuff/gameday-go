@@ -9,7 +9,9 @@ const config: ExpoConfig = {
   // Native only: the web app is apps/web. Without this, opening the dev server URL in a
   // browser serves this app as a website, where SecureStore does not exist.
   platforms: ["ios", "android"],
-  userInterfaceStyle: "automatic",
+  // One dark theme everywhere (NFR-5): native chrome (keyboard, dialogs) stays dark too.
+  userInterfaceStyle: "dark",
+  backgroundColor: "#111111",
   ios: {
     bundleIdentifier: "com.gamedaygo.app",
     supportsTablet: true,

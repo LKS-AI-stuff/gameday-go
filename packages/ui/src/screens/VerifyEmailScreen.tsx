@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { Button, Snackbar } from "react-native-paper";
 
 import { useAuth } from "../auth/AuthProvider";
 import { AUTH_MESSAGES } from "../auth/messages";
-import { Wordmark } from "../components/Brand";
+import { HeroTitle, Wordmark } from "../components/Brand";
+import { Panel } from "../components/Panel";
 import { Screen } from "../components/Screen";
-import { type } from "../theme/tokens";
-import { useColors } from "../theme/useTokens";
+import { colors, spacing, type } from "../theme/tokens";
 
 export const RESEND_COOLDOWN_S = 60;
 
@@ -23,7 +23,6 @@ export function VerifyEmailScreen({
   onUseDifferentEmail,
   onSignIn,
 }: VerifyEmailScreenProps) {
-  const c = useColors();
   const { resendVerification } = useAuth();
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
   const [sending, setSending] = useState(false);
@@ -44,25 +43,42 @@ export function VerifyEmailScreen({
   };
 
   return (
-    <Screen variant="form">
-      <Wordmark tagline={false} />
-      <Text style={[type.h2, { color: c.text }]}>Check your inbox</Text>
-      <Text style={[type.body, { color: c.text }]}>
-        We sent a link to <Text style={{ fontWeight: "600" }}>{email}</Text>. Open it to verify your
-        account, then sign in.
-      </Text>
-      <Button mode="contained" onPress={onSignIn}>
-        {"I've verified, sign in"}
-      </Button>
-      <Button mode="outlined" onPress={resend} loading={sending} disabled={sending || cooldown > 0}>
-        {cooldown > 0 ? `Resend email (${cooldown}s)` : "Resend email"}
-      </Button>
-      <Button mode="text" onPress={onUseDifferentEmail}>
-        Use a different email
-      </Button>
+    <Screen
+      variant="form"
+      hero={
+        <>
+          <Wordmark size="compact" />
+          <HeroTitle>Check your inbox</HeroTitle>
+        </>
+      }
+    >
+      <Panel variant="glass" style={styles.form}>
+        <Text style={[type.body, { color: colors.text }]}>
+          We sent a link to <Text style={{ fontWeight: "600" }}>{email}</Text>. Open it to verify
+          your account, then sign in.
+        </Text>
+        <Button mode="contained" onPress={onSignIn}>
+          {"I've verified, sign in"}
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={resend}
+          loading={sending}
+          disabled={sending || cooldown > 0}
+        >
+          {cooldown > 0 ? `Resend email (${cooldown}s)` : "Resend email"}
+        </Button>
+        <Button mode="text" onPress={onUseDifferentEmail}>
+          Use a different email
+        </Button>
+      </Panel>
       <Snackbar visible={snackbar !== null} onDismiss={() => setSnackbar(null)} duration={4000}>
         {snackbar ?? ""}
       </Snackbar>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  form: { gap: spacing.md, padding: spacing.xl },
+});

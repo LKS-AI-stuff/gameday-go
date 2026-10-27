@@ -35,7 +35,7 @@ export async function renderWithProviders(ui: ReactElement, supabase: SupabaseCl
     >
       <QueryClientProvider client={queryClient}>
         <AuthProvider supabase={supabase}>
-          <PaperProvider theme={paperTheme("light")}>{ui}</PaperProvider>
+          <PaperProvider theme={paperTheme}>{ui}</PaperProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>,

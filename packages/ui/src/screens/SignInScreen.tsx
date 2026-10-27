@@ -1,6 +1,7 @@
 import { signInSchema, type SignInValues } from "@gamedaygo/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { StyleSheet } from "react-native";
 import { useForm } from "react-hook-form";
 import { Button, Snackbar } from "react-native-paper";
 
@@ -8,7 +9,9 @@ import { useAuth } from "../auth/AuthProvider";
 import { AUTH_MESSAGES } from "../auth/messages";
 import { NotAffiliatedNote, Wordmark } from "../components/Brand";
 import { FormTextField } from "../components/FormTextField";
+import { Panel } from "../components/Panel";
 import { Screen } from "../components/Screen";
+import { spacing } from "../theme/tokens";
 
 interface SignInScreenProps {
   onCreateAccount: () => void;
@@ -36,43 +39,48 @@ export function SignInScreen({ onCreateAccount, onUnverified }: SignInScreenProp
   const onSubmit = () => void submitForm();
 
   return (
-    <Screen variant="form">
-      <Wordmark />
-      <FormTextField
-        control={control}
-        name="email"
-        label="Email"
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        textContentType="emailAddress"
-        disabled={formState.isSubmitting}
-      />
-      <FormTextField
-        control={control}
-        name="password"
-        label="Password"
-        secureTextEntry
-        autoComplete="current-password"
-        textContentType="password"
-        disabled={formState.isSubmitting}
-        onSubmitEditing={onSubmit}
-      />
-      <Button
-        mode="contained"
-        onPress={onSubmit}
-        loading={formState.isSubmitting}
-        disabled={formState.isSubmitting}
-      >
-        Sign in
-      </Button>
-      <Button mode="text" onPress={onCreateAccount} disabled={formState.isSubmitting}>
-        New here? Create account
-      </Button>
-      <NotAffiliatedNote />
+    <Screen variant="form" hero={<Wordmark tagline />}>
+      <Panel variant="glass" style={styles.form}>
+        <FormTextField
+          control={control}
+          name="email"
+          label="Email"
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="emailAddress"
+          disabled={formState.isSubmitting}
+        />
+        <FormTextField
+          control={control}
+          name="password"
+          label="Password"
+          secureTextEntry
+          autoComplete="current-password"
+          textContentType="password"
+          disabled={formState.isSubmitting}
+          onSubmitEditing={onSubmit}
+        />
+        <Button
+          mode="contained"
+          onPress={onSubmit}
+          loading={formState.isSubmitting}
+          disabled={formState.isSubmitting}
+        >
+          Sign in
+        </Button>
+        <Button mode="text" onPress={onCreateAccount} disabled={formState.isSubmitting}>
+          New here? Create account
+        </Button>
+        <NotAffiliatedNote />
+      </Panel>
       <Snackbar visible={snackbar !== null} onDismiss={() => setSnackbar(null)} duration={4000}>
         {snackbar ?? ""}
       </Snackbar>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  form: { gap: spacing.md, padding: spacing.xl },
+});

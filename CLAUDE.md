@@ -17,7 +17,7 @@ Requirement and decision IDs (FR-, BR-, AG-, NFR-, AC-, SM-, G-, J-, P-, A-, D-,
 
 ## Status
 
-Current milestone: **M0** (`.claude/technical-designs/m0-foundation.md`), code complete; exit pending phone testing and CI on GitHub. Build milestone by milestone (M0–M6). M0–M5 run entirely locally (TDD §17); hosting is only in M6. Update this line, the milestone's requirements and design docs, and the TDD §19 index when work lands or a milestone closes.
+Current milestone: **M0** (`.claude/technical-designs/m0-foundation.md`), code complete, CI green; exit pending manual tests on web, iOS and Android. Build milestone by milestone (M0–M6). M0–M5 run entirely locally (TDD §17); hosting is only in M6. Update this line, the milestone's requirements and design docs, and the TDD §19 index when work lands or a milestone closes.
 
 Workflow: `/generate-technical-design m<N>` (or a requirements filename) turns `.claude/requirements/<name>.md` into `.claude/technical-designs/<name>.md` (or `<name>-design.md` for a `*-requirements.md` file), proposing any new BRD entries for approval; `/implement-technical-design m<N>` builds that design, validates, gets an independent review, records the test steps and ticks the delivered requirements.
 
@@ -37,7 +37,7 @@ Workflow: `/generate-technical-design m<N>` (or a requirements filename) turns `
 - **Secrets:** never commit them, never log API keys (TDD §8.2), and never put one in an `EXPO_PUBLIC_*` variable, since those ship inside the apps (NFR-12).
 - **Minimal dependencies.** Libraries named in TDD §4–5 are pre-approved. Don't add any other service, library or provider without asking.
 - **Database:** app tables live in schema `app` with forced RLS and no grants to `anon`/`authenticated`; the Supabase Data API is off (TDD §6.1). Every new table (including LangGraph's checkpoint tables) is created by Alembic and must pass `test_db_hardening.py`.
-- **UI:** React Native Paper plus React Native core components, with design tokens from TDD §4.4. Users see "Alerts" (internally "Watches"). No official NFL or team logos, team colors or trademarks as branding (NFR-18, UX4).
+- **UI:** React Native Paper plus React Native core components, with design tokens from TDD §4.4. One dark theme everywhere, in the template/mockup style: the stadium photo behind every `Screen` (`AppBackground`), body content on `Panel variant="glass"` so text never sits on the photo's bright lower half, black `Hero` bands with `FieldLines` for game detail; never add a light theme or follow the OS setting (NFR-5). Users see "Alerts" (internally "Watches"). No official NFL or team logos, team colors or trademarks as branding (NFR-18, UX4).
 - Don't claim tests or builds pass unless they were run.
 - **Hooks** (`.claude/settings.json`): `block-committed-secrets.py` blocks Edit/Write calls that put a real-looking key or database password into any file except a local `.env`, and any server secret into `EXPO_PUBLIC_*`; use placeholders. `kill-stale-backend.sh` runs at the end of each turn and kills the local API (or worker) if `.env`, `pyproject.toml`, `uv.lock` (or, without `--reload`, backend `.py` files) changed after it started; restart it when that happens.
 

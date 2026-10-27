@@ -35,7 +35,7 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AppProviders supabase={supabase} apiUrl={env.apiUrl}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <RootNavigator />
     </AppProviders>
   );

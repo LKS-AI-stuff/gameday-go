@@ -5,7 +5,9 @@ const config: ExpoConfig = {
   slug: "gameday-go-web",
   version: "0.1.0",
   scheme: "gamedaygo",
-  userInterfaceStyle: "automatic",
+  // One dark theme everywhere (NFR-5): native chrome (keyboard, dialogs) stays dark too.
+  userInterfaceStyle: "dark",
+  backgroundColor: "#111111",
   web: {
     // A single-page app; in M6 the API serves it with an SPA fallback (TDD §18).
     output: "single",

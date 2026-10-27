@@ -5,7 +5,7 @@
 | **Document type** | Milestone technical design |
 | **Requirements** | BRD §13 (M0) and the M0 scope in TDD §19; M0 predates the requirements folder |
 | **Milestone** | M0 |
-| **Status** | Code complete. Exit pending: manual tests on iOS and Android, CI green on GitHub |
+| **Status** | Code complete; CI green. Exit pending: manual tests on web, iOS and Android |
 | **Date** | 2026-10-27 |
 | **Builds on** | `.claude/docs/business-requirements.md` (BRD §13 and the requirement IDs cited below), `.claude/docs/technical-design.md` (TDD sections cited below), `.claude/docs/ui-ux-design.md` |
 
@@ -38,7 +38,7 @@ This milestone is implemented. The sections below describe what was built, how t
 - New tables must call `secure_table()` (`backend/migrations/hardening.py`).
 
 **Apps and shared packages**
-- `packages/ui`: design tokens (TDD §4.4) with automated WCAG AA contrast checks, React Native Paper theme (light/dark, follows the OS), Oswald/Open Sans bundled fonts, auth state (`AuthProvider`), sign-in, sign-up (18+ checkbox), verify-email (60 s resend cooldown) and a signed-in placeholder Home.
+- `packages/ui`: design tokens (TDD §4.4) with automated WCAG AA contrast checks, one dark theme on every platform (NFR-5) applied to React Native Paper, the night-stadium background photo behind every screen (`AppBackground`) with forms and cards on glass panels, the template's black hero band with the field-line pattern for later screens (`Hero`, `FieldLines`), the two-tone "GAMEDAY GO" wordmark, mockup-style cards (`Panel`), Oswald/Open Sans bundled fonts, auth state (`AuthProvider`), sign-in, sign-up (18+ checkbox), verify-email (60 s resend cooldown) and a signed-in placeholder Home.
 - `packages/shared`: sign-in and sign-up form schemas (Zod) and product copy.
 - `packages/api-client`: types generated from the backend OpenAPI schema, a typed fetch client that maps problem responses to `ApiError`, and TanStack Query hooks keyed by user ID.
 - Routing: `/` sends signed-out users to `/sign-in` and signed-in users to `/home`; auth and app route groups are guarded by session state.
@@ -52,7 +52,43 @@ This milestone is implemented. The sections below describe what was built, how t
 - Frontend: format check, lint, typecheck, tests, API client drift check, web build, mobile config check.
 - Backend: ruff, mypy, `bootstrap-db`, migration round trip (up, down, up), pytest on plain Postgres 17.
 
+## Deferred to later milestones
+
+M0 deliberately leaves these out; each is in the named milestone's requirements file.
+
+| Item | Moves to | Note |
+|---|---|---|
+| Social sign-in (Google; Apple on iOS) and the Age confirmation screen | M6 | FR-A1, T11. `POST /me/age-confirmation` already exists for it |
+| Account deletion (`DELETE /me`) | M1 | FR-A4, with the Settings screen |
+| API rate limits (slowapi) | M1 | NFR-15, with the first data endpoints |
+| Real Home, Schedule, Game detail and bottom tabs | M1 | M0's Home is a signed-in placeholder |
+| `users.timezone` | M1 | Stays empty until onboarding sets it from the device |
+| Provider daily budgets and rate limiting in `core/http.py` | M1 | Arrive with API-Sports, the first provider |
+| Privacy notice page and its link on sign-up | M6 | NFR-17; the UI/UX sign-up spec links to it |
+| Real verification emails (instead of Mailpit) | M6 | Hosted Supabase sends through Resend from a verified domain |
+
+## First-time setup
+
+Once per machine (full prerequisites in the README):
+
+```bash
+pnpm install
+pnpm supabase start                              # first run downloads the Docker images
+cp .env.example .env                             # set a DATABASE_URL password; add the keys below
+cp apps/web/.env.example apps/web/.env
+cp apps/mobile/.env.example apps/mobile/.env     # replace the IP with your LAN IP
+cd backend
+uv sync
+uv run python -m app.cli bootstrap-db            # creates role gamedaygo_app and schema app
+uv run alembic upgrade head
+```
+
+- `pnpm supabase status` prints the local keys: put the publishable key in `SUPABASE_PUBLISHABLE_KEY` (`.env`) and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (both app `.env` files), and the secret key in `SUPABASE_SECRET_KEY` (`.env` only).
+- Re-run `bootstrap-db` and `alembic upgrade head` after `pnpm supabase db reset` or on a new database.
+
 ## Run it
+
+Each time you work on it:
 
 ```bash
 pnpm supabase start                                   # if not running
@@ -80,7 +116,7 @@ uv run pytest -m supabase                # Data API exposure + real token check 
 
 | # | Do | Expect |
 |---|---|---|
-| W1 | Open the page | Sign-in screen with the "GAMEDAY GO" wordmark and the "not affiliated" note |
+| W1 | Open the page (try with the Mac in both light and dark appearance) | Night-stadium photo behind everything; "GAMEDAY GO" (orange GO) and the tagline at the top; the form and the "not affiliated" note on a dark panel; same look in either appearance. Make the window wide, then narrow and tall: the whole scene stays visible, switching between the wide and tall image as the window's shape changes |
 | W2 | **Create account**; submit empty, then a bad email, a short password, mismatched passwords | Inline error under each field |
 | W3 | Valid form with **I'm 18 or older** unchecked | "You must be 18 or older to use GameDay Go"; no account created (check with Q1) |
 | W4 | Check the box and create the account | "Check your inbox" screen; **Resend email** counts down from 60 s |
@@ -101,9 +137,39 @@ uv run pytest -m supabase                # Data API exposure + real token check 
 | P4 | On the phone: **I've verified, sign in**, then sign in | Home with "Account ready" (the phone reached the backend). Q2 shows the new row |
 | P5 | Fully close Expo Go and reopen the project | Still signed in (session in the device keychain) |
 | P6 | Sign out; sign in with the account created on web | Works: accounts are shared across platforms |
-| P7 | Switch the phone to dark mode | App switches to the dark theme |
+| P7 | Switch the phone between light and dark mode (iPhone: Control Center, long-press brightness, Dark Mode; Android: Quick Settings, Dark theme) | The app stays the same either way: stadium photo background, form on a dark panel, dark keyboard |
 
 If Home shows "Can't reach GameDay Go…", the phone can't reach the API on port 8000: check the LAN IP in `apps/mobile/.env`, the Wi-Fi network and VPNs.
+
+## API checks
+
+With the API running (and an account that has verified its email), from the repository root:
+
+```bash
+API=http://localhost:8000/api/v1
+EMAIL=you@example.com; PASSWORD='your-password'   # an account created through the app
+```
+
+| # | Command | Expect |
+|---|---|---|
+| A1 | `curl -s -i $API/health` | `200`, `{"status":"ok"}` and an `x-request-id` header |
+| A2 | `curl -s -w " %{http_code}\n" $API/ready` | `{"status":"ok"} 200` (the database answers) |
+| A3 | `curl -s -w " %{http_code}\n" $API/me` | `401` with `"code":"not_authenticated"` (problem+json) |
+| A4 | Get a token (below) | `echo ${#TOKEN}` prints a length of several hundred characters |
+| A5 | `curl -s $API/me -H "Authorization: Bearer $TOKEN"` | `200` with your `email` and `"age_confirmed":true`; Q2 then shows the row |
+| A6 | `curl -s -w " %{http_code}\n" $API/me -H "Authorization: Bearer ${TOKEN%????}AAAA"` | `401` with `"code":"invalid_token"` (tampered signature) |
+
+A4, sign in through local Supabase Auth and keep the access token:
+
+```bash
+TOKEN=$(curl -s "http://127.0.0.1:54321/auth/v1/token?grant_type=password" \
+  -H "apikey: $(grep '^SUPABASE_PUBLISHABLE_KEY=' .env | cut -d= -f2)" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+```
+
+To check a phone can reach the API, open `http://<LAN IP>:8000/api/v1/health` in the phone's browser: it should show `{"status":"ok"}`.
 
 ## Database checks
 
@@ -161,7 +227,8 @@ curl -s -o /dev/null -w "%{http_code}\n" "http://127.0.0.1:54321/rest/v1/users" 
 
 - [x] Automated checks pass locally (backend, TS packages and apps, web build)
 - [x] Sign-up, verification, sign-in and `/me` verified end to end over HTTP against the local stack
+- [x] API checks A1–A6
 - [ ] Manual web tests W1–W10
 - [ ] Manual phone tests P1–P7 on iOS
 - [ ] Manual phone tests P1–P7 on Android
-- [ ] CI green on GitHub after the first push
+- [x] CI green on GitHub after the first push

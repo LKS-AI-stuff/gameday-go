@@ -16,7 +16,7 @@ These are the milestone's requirements: what must be built, as a checklist that 
 
 - [ ] API-Sports key in `.env` (`APISPORTS_KEY`)
 - [ ] T4: confirm API-Sports endpoint paths, NFL league ID, status codes, team/venue fields, and that one season call returns all games (record sanitized contract fixtures)
-- [ ] T10: confirm the UX1–UX5 defaults (UI/UX §11)
+- [ ] T10: confirm the UX1, UX4 and UX5 defaults (UI/UX §11; UX2 and UX3 are decided)
 - [ ] Decide on `expo-location` for "Use my location" (not in the TDD's approved libraries; needs approval, or ship ZIP entry only)
 
 ## Database (each new table calls `secure_table()`)
@@ -63,7 +63,7 @@ These are the milestone's requirements: what must be built, as a checklist that 
 - [ ] Schedule (§7.4): week chips, team filter, day groups, bye-week state
 - [ ] Game detail (§7.5): `MatchupHero`, tags with explanation sheet, planning-window notice, About section. "Plan this game" is wired in M3, "Set an alert" in M5
 - [ ] Components: `GameCard` variants (§6.1), `TagChip` (§6.4), `PlanningWindowNotice`, `SampleDataBadge`, data freshness line (§5.1), skeleton / empty / error / offline states (§5.3)
-- [ ] Settings (§7.11): edit preferences, notification level and categories, time zone, theme override (UX3), sign out, delete account
+- [ ] Settings (§7.11): edit preferences, notification level and categories, time zone, sign out, delete account (no theme setting: one dark theme, NFR-5)
 - [ ] `packages/shared` formatting: kickoff with time zone (NFR-4), TBD times and teams, records, distance (UI/UX §5.5)
 
 ## Tests

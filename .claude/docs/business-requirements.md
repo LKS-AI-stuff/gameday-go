@@ -5,8 +5,8 @@
 | **Product** | GameDay Go |
 | **Tagline** | Your NFL game day, planned. |
 | **Document type** | Business Requirements Document (BRD) |
-| **Version** | 0.15 (draft) |
-| **Date** | 2026-10-21 |
+| **Version** | 0.16 (draft) |
+| **Date** | 2026-10-27 |
 | **Status** | Draft. Key decisions in Section 15 |
 | **Audience** | Product owner, engineers, AI coding agents, QA |
 | **Companion documents** | `technical-design.md` (how it's built), `ui-ux-design.md` (how it looks and behaves) |
@@ -432,7 +432,7 @@ Users see Watches as **"Alerts"** in the app.
 - NFR-2: Responsive layouts, with phone-first design on mobile and a wider layout on desktop web.
 - NFR-3: Accessibility: screen-reader labels, sufficient contrast, keyboard navigation on web, adjustable text sizes on mobile. Target WCAG 2.1 AA for web.
 - NFR-4: All times are shown with an explicit time zone. Date formats are unambiguous (e.g. "Sun, Nov 8 · 12:00 PM CT").
-- NFR-5: Light and dark themes.
+- NFR-5: One consistent dark visual theme, in the style of the approved design, on every platform and regardless of the device's light or dark setting.
 
 ### 10.2 Performance
 
