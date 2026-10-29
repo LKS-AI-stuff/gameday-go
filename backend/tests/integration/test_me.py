@@ -2,46 +2,15 @@
 
 import asyncio
 import uuid
-from collections.abc import AsyncIterator
-from typing import Any
 
 import asyncpg
 import httpx
 import pytest
 
-from app.core.auth import TokenVerifier
-from app.core.settings import Settings
-from app.main_api import create_app
-from tests.conftest import TokenFactory, make_settings
+from tests.conftest import TokenFactory
+from tests.integration.conftest import auth
 
 pytestmark = pytest.mark.db
-
-
-@pytest.fixture
-async def api(migrated_db: Settings, jwks: dict[str, Any]) -> AsyncIterator[httpx.AsyncClient]:
-    app = create_app(migrated_db)
-    # Tokens are minted with the test key; JWKS is served from memory.
-    jwks_client = httpx.AsyncClient(
-        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=jwks))
-    )
-    app.state.token_verifier = TokenVerifier(make_settings(), http_client=jwks_client)
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-    await jwks_client.aclose()
-
-
-@pytest.fixture
-async def user_ids(app_conn: asyncpg.Connection) -> AsyncIterator[list[str]]:
-    """Collects user IDs created by a test and deletes their rows afterwards."""
-    ids: list[str] = []
-    yield ids
-    if ids:
-        await app_conn.execute("delete from app.users where id = any($1::uuid[])", ids)
-
-
-def auth(token: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {token}"}
 
 
 async def test_first_request_provisions_user(
@@ -63,6 +32,7 @@ async def test_first_request_provisions_user(
         "email": "ben@example.com",
         "age_confirmed": True,
         "timezone": None,
+        "onboarded": False,
     }
     assert second.json() == first.json()
     assert (

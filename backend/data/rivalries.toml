@@ -1,0 +1,44 @@
+# Featured rivalries (BRD Appendix B): well-known non-division matchups that get the
+# High-weight "Featured rivalry" tag whichever team is home. Division rivalries are
+# tagged automatically and aren't listed. Team IDs are API-Sports team codes.
+# Reviewed before each season; reload with `uv run python -m app.cli seed`.
+
+[[rivalry]]
+teams = ["KC", "BUF"]
+reason = "Repeated high-stakes playoff meetings in recent seasons"
+
+[[rivalry]]
+teams = ["KC", "PHI"]
+reason = "Recent Super Bowl opponents"
+
+[[rivalry]]
+teams = ["SF", "DAL"]
+reason = "Long-running NFC playoff rivalry"
+
+[[rivalry]]
+teams = ["GB", "DAL"]
+reason = "Historic NFC rivalry with many playoff meetings"
+
+[[rivalry]]
+teams = ["SF", "GB"]
+reason = "Frequent playoff opponents"
+
+[[rivalry]]
+teams = ["NE", "IND"]
+reason = "Classic AFC rivalry"
+
+[[rivalry]]
+teams = ["PIT", "NE"]
+reason = "Frequent AFC Championship opponents"
+
+[[rivalry]]
+teams = ["NYG", "NYJ"]
+reason = "Same city and shared stadium"
+
+[[rivalry]]
+teams = ["PHI", "PIT"]
+reason = "In-state \"Battle of Pennsylvania\""
+
+[[rivalry]]
+teams = ["DAL", "HOU"]
+reason = "In-state Texas matchup"

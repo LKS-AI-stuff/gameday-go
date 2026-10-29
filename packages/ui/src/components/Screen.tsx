@@ -1,5 +1,12 @@
-import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import type { ReactElement, ReactNode } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  type RefreshControlProps,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { layout, spacing } from "../theme/tokens";
@@ -8,18 +15,33 @@ import { Hero } from "./Hero";
 
 interface ScreenProps {
   children: ReactNode;
-  /** Narrow centered column for forms (auth screens). */
-  variant?: "form" | "reading";
+  /** Narrow centered column for forms, the reading width, or wide for card grids. */
+  variant?: "form" | "reading" | "wide";
   /** Optional hero at the top, in the photo's dark upper area and under the status bar. */
   hero?: ReactNode;
+  /** Draw the hero as the black band with field lines (game detail) instead of over the photo. */
+  heroBand?: boolean;
+  /** Pull-to-refresh (UI/UX §5.6). */
+  refreshControl?: ReactElement<RefreshControlProps>;
 }
 
 /**
  * Every screen: the fixed stadium background, then safe-area, keyboard-aware scrolling content
  * with a max width. Body content goes on `Panel`s so it stays readable over the photo.
  */
-export function Screen({ children, variant = "reading", hero }: ScreenProps) {
-  const maxWidth = variant === "form" ? layout.formWidth : layout.readingWidth;
+export function Screen({
+  children,
+  variant = "reading",
+  hero,
+  heroBand = false,
+  refreshControl,
+}: ScreenProps) {
+  const maxWidth =
+    variant === "form"
+      ? layout.formWidth
+      : variant === "wide"
+        ? layout.wideWidth
+        : layout.readingWidth;
   return (
     <AppBackground>
       <SafeAreaView style={styles.fill} edges={hero ? ["left", "right"] : ["top", "left", "right"]}>
@@ -27,9 +49,17 @@ export function Screen({ children, variant = "reading", hero }: ScreenProps) {
           style={styles.fill}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={refreshControl}
+          >
             {hero ? (
-              <Hero underStatusBar variant={variant} overPhoto>
+              <Hero
+                underStatusBar
+                variant={variant === "form" ? "form" : "reading"}
+                overPhoto={!heroBand}
+              >
                 {hero}
               </Hero>
             ) : null}

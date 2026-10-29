@@ -56,7 +56,7 @@ GameDay Go runs on **iOS, Android and web** from one shared codebase.
 | SM5 | Grounding | 100% of ticket and venue items in a recommendation link to a real provider result or are clearly labeled as unavailable or sample data |
 | SM6 | Alert precision | 0 duplicate alerts for the same Watch condition within its cooldown window |
 | SM7 | Cost control | Average AI cost per plan stays under the per-plan cap (A16) |
-| SM8 | Score availability | Scores keep updating through every favorite-team game on demo days without exceeding the score provider's free plan |
+| SM8 | Score availability | Scores keep updating through every favorite-team game on demo days without exceeding the score provider's plan limits |
 
 ### 3.3 Out of scope
 
@@ -210,7 +210,7 @@ Significance comes from two sources: facts from the schedule and team data (alwa
 | Division rivalry | Both teams in the same division | High |
 | Featured rivalry | Curated list of well-known non-division rivalries (Appendix B, editable) | High |
 | Primetime | Kickoff slot (Thursday, Sunday or Monday night) | Medium |
-| Home opener / season finale | Schedule position | Medium |
+| Home opener / home finale | The home team's first or last regular-season home game (international games excluded) | Medium |
 | International game | Venue country | Informational |
 
 **Record-based tags (from daily standings):**
@@ -289,7 +289,7 @@ Priority: **M** = Must (MVP), **S** = Should (MVP if time allows), **C** = Could
 | FR-LS4 | The home screen highlights favorite-team games in progress ("Live now") and shows the most recent final scores for favorite teams. | M |
 | FR-LS8 | When score updates aren't available, the app keeps showing the last known score with its time and a "Scores paused" notice. Scores are never guessed. | M |
 | FR-LS9 | Final scores are stored and kept for the season. | M |
-| FR-LS17 | Scores update at least once an hour during games, using the score provider's free plan. Many people viewing the same game must not increase provider usage. | M |
+| FR-LS17 | Scores update at least once an hour during games, within the score provider's plan limits. Many people viewing the same game must not increase provider usage. | M |
 
 #### 8.4.1 Standings
 
@@ -464,7 +464,7 @@ Technical limits, usage terms still to check, and integration details are in the
 
 | Service | Provider | Used for | Cost model | If unavailable |
 |---|---|---|---|---|
-| Schedule, scores, standings | API-Sports (American Football) | Season schedule, game status and scores, daily standings | Free plan | Last known data shown with its time ("Scores paused") |
+| Schedule, scores, standings | API-Sports (American Football) | Season schedule, game status and scores, daily standings | Paid Pro plan (the free plan doesn't cover the current season) | Last known data shown with its time ("Scores paused") |
 | Tickets | Ticketmaster Discovery | Ticket availability, price range, buy link | Free public tier | "Ticket data is temporarily unavailable" |
 | Venues | Google Places | Nearby sports bars, hours, contact, rating | Free monthly usage; requires a billing account | "Venue search is unavailable right now" |
 | AI | OpenAI | Agent reasoning and explanations | Pay as you go, with a monthly budget limit (A16) | "Planning is unavailable right now"; browsing still works |
@@ -547,7 +547,7 @@ Milestones **M0–M5 are built and tested entirely on a developer's machine**, w
 | A1 | The primary purpose is a **portfolio/showcase** product. No monetization in the MVP. Affiliate links are possible later. |
 | A2 | US users only; prices in USD. |
 | A3 | Regular season and playoffs only (BR-W1 to BR-W3). |
-| A4 | One provider supplies the schedule, scores and standings. Its free plan covers the current season (confirmed 2026-10-13). |
+| A4 | One provider supplies the schedule, scores and standings, on its paid Pro plan, which covers the current season (confirmed 2026-10-29; the free plan only covers past seasons). |
 | A5 | "Local area" = 75 miles straight-line from home location; adjustable. |
 | A6 | The hard budget is per ticket. Party size is asked during planning only when needed. Default party size is 1. |
 | A7 | Users must be 18+. |

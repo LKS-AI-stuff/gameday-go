@@ -6,7 +6,7 @@ GameDay Go is not affiliated with the NFL or any team.
 
 ## Status
 
-Milestone **M0 (foundation)** is code complete. Milestone requirements are in `.claude/requirements/`; each milestone's technical design, with its status and test steps (including database queries), is in `.claude/technical-designs/`. TDD §19 has the index.
+Milestones **M0 (foundation)** and **M1 (preferences and schedule)** are code complete; their exits are pending manual tests on devices. Milestone requirements are in `.claude/requirements/`; each milestone's technical design, with its status and test steps (including database queries), is in `.claude/technical-designs/`. TDD §19 has the index.
 
 ## Stack
 
@@ -30,6 +30,8 @@ cd backend
 uv sync
 uv run python -m app.cli bootstrap-db          # creates the backend DB role and schema
 uv run alembic upgrade head
+uv run python -m app.cli seed                  # ZIPs, places, rivalries, teams (needs APISPORTS_KEY)
+uv run python -m app.cli sync-schedule         # the active season's schedule
 uv run uvicorn app.main_api:create_app --factory --reload --host 0.0.0.0
 ```
 
@@ -50,8 +52,10 @@ pnpm format:check
 
 cd backend
 uv run ruff format --check . && uv run ruff check . && uv run mypy app migrations tests
-uv run pytest                          # unit, integration and database hardening tests
+uv run pytest                          # unit, contract, integration and hardening tests (own *_test database)
 uv run pytest -m supabase              # Data API exposure test against the local Supabase stack
+
+pnpm --filter @gamedaygo/web e2e       # Playwright: needs the local stack, API and web app running
 ```
 
 ## Docs

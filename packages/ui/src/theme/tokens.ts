@@ -122,6 +122,8 @@ export const layout = {
   readingWidth: 720,
   /** Auth forms are narrower still. */
   formWidth: 440,
+  /** Card grids on desktop web (UI/UX §3: content max 1200 px). */
+  wideWidth: 1200,
   minTouchTarget: 48,
 } as const;
 

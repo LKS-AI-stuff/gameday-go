@@ -36,6 +36,7 @@ jobs:
       - name: API client is up to date with the backend schema
         env:
           DATABASE_URL: postgresql+asyncpg://unused:unused@localhost:5432/unused
+          PROVIDER_APISPORTS_ENABLED: "false"
         run: |
           pnpm api:generate
           git diff --exit-code -- packages/api-client
@@ -68,6 +69,8 @@ jobs:
       APP_ENV: ci
       DATABASE_URL: postgresql+asyncpg://gamedaygo_app:ci-only-password@localhost:5432/postgres
       DATABASE_ADMIN_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
+      # No provider keys in CI; tests inject fixture providers (NFR-21).
+      PROVIDER_APISPORTS_ENABLED: "false"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

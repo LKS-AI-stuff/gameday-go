@@ -1,8 +1,8 @@
 """The single path for outbound provider calls (TDD §8.2).
 
-Implemented now: kill switch (1), timeouts and retries (4), redaction (5) and
-call metrics (6). The daily budget (2) and rate limiter (3) are added with the
-first provider integration in M1.
+Kill switch (1), daily budget (2), rate limit (3), timeouts and retries (4),
+redaction (5) and call metrics (6). Every attempt, retries included, spends one
+budget unit and waits for the rate limiter.
 """
 
 import time
@@ -18,7 +18,9 @@ from tenacity import (
     wait_exponential,
 )
 
+from app.core.budgets import BudgetState, BudgetStore
 from app.core.logging import get_logger
+from app.core.rate_limit import RateLimiter
 from app.core.redaction import redact_text
 from app.core.settings import Provider, Settings
 
@@ -65,10 +67,18 @@ class ProviderClient:
         settings: Settings,
         client: httpx.AsyncClient | None = None,
         retry_base_s: float = 0.5,
+        budgets: BudgetStore | None = None,
+        rate_limiters: Mapping[Provider, RateLimiter] | None = None,
     ) -> None:
         self._settings = settings
         self._client = client or httpx.AsyncClient(timeout=DEFAULT_TIMEOUT)
         self._retry_base_s = retry_base_s
+        self._budgets = budgets
+        self._limiters: Mapping[Provider, RateLimiter] = (
+            rate_limiters
+            if rate_limiters is not None
+            else {"apisports": RateLimiter(settings.apisports_rate_per_min)}
+        )
 
     async def aclose(self) -> None:
         await self._client.aclose()
@@ -83,13 +93,19 @@ class ProviderClient:
         params: Mapping[str, Any] | None = None,
         headers: Mapping[str, str] | None = None,
         json: Any = None,
+        allow_reserved: bool = False,
     ) -> httpx.Response:
-        """Send one logical request. `endpoint` is a short name used in logs instead of the URL."""
+        """Send one logical request. `endpoint` is a short name used in logs instead of the URL.
+
+        `allow_reserved` may spend the reserved share of the daily budget (final-score
+        confirmation from M4). Raises `ProviderDisabled` or `BudgetExhausted` before sending.
+        """
         if not self._settings.provider_enabled(provider):
             raise ProviderDisabled(provider)
 
         started = time.monotonic()
         response: httpx.Response | None = None
+        budget: BudgetState | None = None
         try:
             async for attempt in AsyncRetrying(
                 retry=retry_if_exception(_is_retryable),
@@ -98,6 +114,13 @@ class ProviderClient:
                 reraise=True,
             ):
                 with attempt:
+                    if self._budgets is not None and self._budgets.is_budgeted(provider):
+                        budget = await self._budgets.consume(
+                            provider, allow_reserved=allow_reserved
+                        )
+                    limiter = self._limiters.get(provider)
+                    if limiter is not None:
+                        await limiter.acquire()
                     response = await self._client.request(
                         method, url, params=params, headers=headers, json=json
                     )
@@ -122,5 +145,7 @@ class ProviderClient:
             endpoint=endpoint,
             status=response.status_code,
             latency_ms=round((time.monotonic() - started) * 1000),
+            budget_used=budget.used if budget else None,
+            budget_remaining=budget.remaining if budget else None,
         )
         return response

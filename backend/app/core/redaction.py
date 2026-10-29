@@ -1,6 +1,8 @@
 """Secret scrubbing for URLs and log events (TDD §8.2 step 5, FR-T8, FR-O6)."""
 
+import hashlib
 import re
+import uuid
 from collections.abc import Mapping
 from typing import Any
 
@@ -46,3 +48,8 @@ def redact_value(key: str | None, value: Any) -> Any:
     if isinstance(value, list | tuple):
         return [redact_value(None, v) for v in value]
     return value
+
+
+def hash_user_id(user_id: uuid.UUID) -> str:
+    """A stable, non-reversible user reference for logs (TDD §15)."""
+    return hashlib.sha256(user_id.bytes).hexdigest()[:16]

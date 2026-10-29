@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,3 +36,8 @@ async def confirm_age(session: AsyncSession, user_id: uuid.UUID) -> None:
         .where(User.id == user_id, User.age_confirmed_at.is_(None))
         .values(age_confirmed_at=datetime.now(UTC))
     )
+
+
+async def delete_user(session: AsyncSession, user_id: uuid.UUID) -> None:
+    """Removes the user and, through ON DELETE CASCADE, every user-owned row (FR-A4)."""
+    await session.execute(delete(User).where(User.id == user_id))

@@ -18,11 +18,18 @@ log = get_logger(__name__)
 class ProblemError(Exception):
     """An expected error returned to the client with a stable `code`."""
 
-    def __init__(self, status: int, code: str, detail: str | None = None) -> None:
+    def __init__(
+        self,
+        status: int,
+        code: str,
+        detail: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         super().__init__(detail or code)
         self.status = status
         self.code = code
         self.detail = detail
+        self.headers = headers
 
 
 def problem_response(
@@ -43,7 +50,9 @@ def problem_response(
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ProblemError)
     async def _problem(_: Request, exc: ProblemError) -> JSONResponse:
-        return problem_response(exc.status, exc.code, exc.detail)
+        response = problem_response(exc.status, exc.code, exc.detail)
+        response.headers.update(exc.headers or {})
+        return response
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:

@@ -107,7 +107,7 @@ gameday-go/
 │   │   ├── jobs/               # Worker job functions
 │   │   └── email/              # Templates (Jinja2) and rendering
 │   ├── migrations/             # Alembic
-│   ├── data/                   # reference_overrides.yaml, rivalries.yaml, zip_centroids.csv, place_centroids.csv, replays/*.json
+│   ├── data/                   # reference_overrides.toml, rivalries.toml (stdlib tomllib), zip_centroids.csv, place_centroids.csv, replays/*.json
 │   ├── tests/                  # unit/, integration/, contract/, agent_eval/
 │   ├── pyproject.toml
 │   └── Dockerfile
@@ -157,6 +157,7 @@ The folders under `packages/` are **internal pnpm workspace packages**. They are
 | API types | Generated from the backend OpenAPI schema with `openapi-typescript`; thin typed fetch wrapper |
 | Streaming | SSE over `fetch` streaming: `expo/fetch` on native **[verify streaming support in the pinned SDK]**, standard `fetch` on web |
 | Local reminders | `expo-notifications` (local scheduling only, no push) |
+| Device location | `expo-location`: one-off foreground position for "Use my location" (onboarding ZIP in M1, nearby bars in M2, the planner's location toggle in M3). Permission is requested only when the user taps it; coordinates are used for that request only and never stored (FR-P3, FR-P3a) |
 | Date/time | Store and transfer UTC ISO-8601; display with the user's IANA time zone via `Intl` / `date-fns-tz` (NFR-4) |
 | Testing | Jest + React Native Testing Library; Playwright (web E2E); Maestro (mobile E2E) |
 
@@ -181,7 +182,7 @@ Web gets a wider layout with a side navigation rail. Mobile uses bottom tabs (NF
 ### 4.3 Key client behaviors
 
 - **Auth flow.** The client signs in with Supabase and sends `Authorization: Bearer <access_token>` on every API call. On first authenticated call the backend creates the `users` row. If preferences are missing, the client routes to onboarding.
-- **Score refresh.** Home and game detail refetch scores from the backend on a configurable interval while focused (`EXPO_PUBLIC_SCORE_REFRESH_SEC`, default 300; TanStack `refetchInterval`), plus on screen focus and app foreground, and support pull-to-refresh (FR-LS11). These requests hit only the backend cache, never API-Sports, so they don't use the 100/day quota (NFR-8b). A short client interval keeps the score on screen within a few minutes of the backend's latest poll, so it is never more than about an hour old (NFR-8a).
+- **Score refresh.** Home and game detail refetch scores from the backend on a configurable interval while focused (`EXPO_PUBLIC_SCORE_REFRESH_SEC`, default 300; TanStack `refetchInterval`), plus on screen focus and app foreground, and support pull-to-refresh (FR-LS11). These requests hit only the backend cache, never API-Sports, so they don't use the provider quota (NFR-8b). A short client interval keeps the score on screen within a few minutes of the backend's latest poll, so it is never more than about an hour old (NFR-8a).
 - **Agent streaming.** `POST /agent/sessions/{id}/messages` returns an SSE stream of the events listed in §12 (`run_started`, `trace_step`, `token`, `plan_card`, `proposal`, `clarification`, `limit`, `error`, `done`). The client renders trace steps live and the Plan Card when it arrives.
 - **Proposals.** "Save plan" and "Create Watch" from the agent are rendered as buttons. Tapping calls the normal REST endpoint (`POST /plans`, `POST /watches`) with the proposal ID. The agent itself never creates them (FR-AG8).
 - **Local reminders (mobile only).** On app start, foreground and after saving, editing or deleting a plan or changing the notification level, the app calls `GET /reminders/upcoming`, which returns reminders only for saved plans with a reminder set, a future kickoff, and a user notification level of Medium or High (BR-N3), so at Low or Off the list is empty and reconciliation cancels everything. It then reconciles scheduled notifications: cancel every GameDay Go-scheduled notification and reschedule from the list, keyed by reminder ID. Each notification's text includes the kickoff time it was scheduled for (FR-N7–N9). Permission is requested on the first save (FR-N8).
@@ -335,7 +336,7 @@ The backend connects as a dedicated role (`gamedaygo_app`) that owns schema `app
 | `test_data_api_exposure.py` (HTTP, marker `supabase`) | Locally against `supabase start`, and as an M6 smoke test against the hosted project | `GET {SUPABASE_URL}/rest/v1/<table>` for several `app` tables, with (a) the anon key and (b) a signed-in test user's token, never returns data: Data API disabled (expected 404/unavailable) or a permission/unknown-relation error. Also asserts the `Accept-Profile: app` header can't select the schema |
 
 The M6 deployment checklist also includes reviewing Supabase's Security Advisor for the hosted project.
-- **Account deletion (FR-A4).** `DELETE /me` deletes all user rows in one transaction (cascades), deletes LangGraph checkpoints for the user's sessions, then calls the Supabase Admin API (server-side service key) to delete the auth user. If the admin call fails, a retry job is recorded.
+- **Account deletion (FR-A4).** `DELETE /me` deletes all user rows in one transaction (cascades) and, from M3, the LangGraph checkpoints for the user's sessions, then calls the Supabase Auth Admin API with the server-side `SUPABASE_SECRET_KEY` to delete the auth user (a 404 counts as done). If that call fails, the request returns `503 auth_deletion_failed` and the client offers Try again: the retry re-provisions an empty user row, deletes it and repeats the auth call, so it converges without a retry job. Personal data is gone after the first call.
 
 ## 7. Data Model
 
@@ -345,10 +346,10 @@ All tables are in schema `app`. Every table has `created_at` / `updated_at` (`ti
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `teams` | `id` (text, e.g. `KC`), `name`, `city`, `state`, `conference`, `division`, `home_venue_name`, `home_venue_lat`, `home_venue_lng`, `apisports_team_id`, `ticketmaster_attraction_id` (nullable) | Built at schedule sync from API-Sports team and standings data **[verify fields]**, with venue coordinates from `place_centroids`; any missing value comes from `reference_overrides.yaml` (FR-O1a) |
-| `venues_ref` | `id`, `name`, `city`, `state`, `country`, `lat`, `lng`, `source` (`apisports`+`place_centroids` / `override`) | Every venue seen in the schedule (home, neutral, international). If coordinates can't be resolved, distance is unknown, which means not travel-eligible |
-| `featured_rivalries` | `team_a`, `team_b`, `reason` | From `rivalries.yaml` (Appendix B). Unique unordered pair |
-| `zip_centroids` | `zip` (PK, text), `lat`, `lng`, `place_name`, `state` | Census ZCTA gazetteer, about 33k rows (FR-P3). `place_name`/`state` are filled at seed time from the nearest `place_centroids` row (the ZCTA file has no city names) and shown as the ZIP confirmation, e.g. "Chicago, IL". "Use my location" in onboarding maps device coordinates to the nearest ZIP centroid (`geo.nearest_zip`) |
+| `teams` | `id` (API-Sports team `code`, e.g. `KC`), `name` (`Kansas City Chiefs`), `nickname` (`Chiefs`, the name's last word), `city`, `state`, `conference`, `division`, `home_venue_name`, `home_venue_lat`, `home_venue_lng`, `apisports_team_id` (unique), `ticketmaster_attraction_id` (nullable) | Built by `cli seed` from API-Sports `teams` and `standings` (conference, division). The home venue, its coordinates and the state are set by the schedule sync from where each team plays most US home games. `reference_overrides.toml` `[teams.<code>]` can override any field (FR-O1a) |
+| `venues_ref` | `id`, `name`, `city`, `state`, `country`, `lat`, `lng`, `source` (`place_centroids` / `override` / `none`); unique (`name`, `city`). API-Sports reports a venue's name and city only, so `reference_overrides.toml` `[venue_cities]` gives each city's state (US) or country and coordinates (abroad) | Every venue seen in the schedule (home, neutral, international). If coordinates can't be resolved, distance is unknown, which means not travel-eligible |
+| `featured_rivalries` | `team_a`, `team_b`, `reason` | From `rivalries.toml` (Appendix B). Unique unordered pair (`team_a < team_b`) |
+| `zip_centroids` | `zip` (PK, text), `lat`, `lng`, `place_name`, `state` | Census ZCTA gazetteer, about 33k rows (FR-P3). `place_name`/`state` are computed by `cli build-centroids` from the nearest Census place, weighted by the place's land area (the ZCTA file has no city names) and shown as the ZIP confirmation, e.g. "Chicago, IL". "Use my location" in onboarding maps device coordinates to the nearest ZIP centroid (`geo.nearest_zip`) |
 | `place_centroids` | `name`, `state`, `lat`, `lng` (composite key name+state) | Census Places gazetteer (public domain), used to place venue cities. City-level accuracy (a few miles) is enough for the 75-mile local-area rule |
 
 ### 7.2 Users and preferences
@@ -366,10 +367,10 @@ Device coordinates from "use my location" are used per request and never stored 
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `games` | `id`, `apisports_game_id` (unique), `season`, `week`, `stage` (`regular`/`playoff`), `home_team_id` (nullable), `away_team_id` (nullable), `home_placeholder`, `away_placeholder` (e.g. "AFC Wild Card winner" while playoff teams are TBD), `kickoff_at` (nullable when TBD), `kickoff_tbd` (bool), `venue_name`, `venue_city`, `venue_country`, `status`, `home_score`, `away_score`, `quarter`, `clock`, `score_updated_at`, `is_sample`, `last_synced_at` | Live state stored on the game row. Replay games have `is_sample = true` |
+| `games` | `id`, `apisports_game_id` (unique), `season`, `week` (1–18 regular; 19–22 Wild Card, Divisional, Conference, Super Bowl), `stage` (`regular`/`playoff`), `home_team_id` (nullable), `away_team_id` (nullable), `home_placeholder`, `away_placeholder` (e.g. "AFC Wild Card winner" while playoff teams are TBD), `game_date` (the provider's calendar date, kept when the time is TBD), `kickoff_at` (nullable when TBD), `kickoff_tbd` (bool), `sort_at` (kickoff, or 23:59 Eastern on the game day while TBD; ordering and cursors), `venue_id` (FK `venues_ref`, for coordinates), `venue_name`, `venue_city`, `venue_state`, `venue_country` (as reported; diffed), `status`, `home_score`, `away_score`, `quarter`, `clock`, `score_updated_at`, `is_sample`, `last_synced_at` | Live state stored on the game row. Replay games have `is_sample = true` |
 | `seasons` | `year` (PK), `status` (`upcoming`/`active`/`completed`), `schedule_available_at`, `super_bowl_game_id` (nullable) | Season rollover (FR-O1c) |
 | `game_changes` | `id`, `game_id`, `field`, `old_value`, `new_value`, `detected_at`, `sync_run_id` | Audit of sync diffs; drives schedule-change alerts (FR-O2) |
-| `game_tags` | `game_id`, `tag`, `weight`, `source` (`schedule`/`standings`), `computed_at` | Recomputed after schedule sync and standings sync |
+| `game_tags` | `game_id`, `tag`, `weight` (`high`/`medium`/`info`), `source` (`schedule`/`standings`), `detail` (nullable; e.g. the featured-rivalry reason), `computed_at` | Recomputed after schedule sync and standings sync |
 | `standings_snapshots` | `id`, `season`, `retrieved_at`, `is_sample` | |
 | `standings_entries` | `snapshot_id`, `team_id`, `wins`, `losses`, `ties`, `win_rate`, `division_rank`, `games_behind`, `points_for`, `points_against` (nullable; shown only if the provider supplies them) | |
 | `score_recordings` | `id`, `apisports_game_id`, `captured_at`, `payload` (jsonb) | Raw polled payloads when recording (FR-LS15) |
@@ -399,7 +400,7 @@ Device coordinates from "use my location" are used per request and never stored 
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `provider_budgets` | `provider`, `day` (UTC date), `limit`, `used`, `reserved` (composite PK) | Atomic consumption (§8.2) |
+| `provider_budgets` | `provider`, `day` (UTC date), `daily_limit`, `used`, `reserved` (composite PK) | Atomic consumption (§8.2) |
 | `provider_cache` | `key` (PK), `provider`, `payload` (jsonb), `expires_at` | Within provider terms (FR-T5, FR-V4) |
 | `job_runs` | `id`, `job`, `scheduled_for`, `started_at`, `ended_at`, `status`, `detail` | Unique (`job`, `scheduled_for`) for idempotency |
 | `sync_runs` | `id`, `kind` (`schedule`/`standings`), `started_at`, `ended_at`, `status`, `records`, `changes`, `error` | |
@@ -440,8 +441,8 @@ Adapters return **normalized domain types** (e.g. `TicketEvent` with `min_price_
 Every outbound call goes through `ProviderClient.request(provider, ...)`, which handles:
 
 1. **Kill switch.** If `PROVIDER_<X>_ENABLED=false`, it raises `ProviderDisabled` immediately (FR-O5).
-2. **Daily budget.** It runs `UPDATE app.provider_budgets SET used = used + 1 WHERE provider=$1 AND day=$2 AND used < limit - reserved RETURNING used`. No row returned raises `BudgetExhausted`. Reserved capacity (scores final confirmation) is consumed with a separate `allow_reserved=True` path. Budgets reset by UTC day, which matches API-Sports' 00:00 UTC reset.
-3. **Rate limit.** An in-process async token bucket. Ticketmaster: 1 request/s per process (two processes give ≤ 2 req/s, FR-T7). API-Sports: 10/min total (worker only). Google Places: per settings.
+2. **Daily budget.** In its own short transaction (never inside a service transaction), it creates today's row if missing, then runs `UPDATE app.provider_budgets SET used = used + 1 WHERE provider=$1 AND day=$2 AND used < daily_limit - reserved RETURNING used`. No row returned raises `BudgetExhausted`. Reserved capacity (scores final confirmation) is consumed with a separate `allow_reserved=True` path. Budgets reset by UTC day, which matches API-Sports' 00:00 UTC reset.
+3. **Rate limit.** An in-process async token bucket that waits rather than fails. Ticketmaster: 1 request/s per process (two processes give ≤ 2 req/s, FR-T7). API-Sports: `APISPORTS_RATE_PER_MIN` (10) total (CLI in M1, worker from M4). Google Places: per settings.
 4. **Timeouts and retries.** 5 s connect / 10 s read timeouts. `tenacity` retries on network errors, 5xx and 429 with exponential backoff (max 3 attempts; 429 honors `Retry-After`). Retries also consume budget.
 5. **Redaction.** URLs are logged with query parameters `apikey`, `key` and `api_key` replaced by `***`. Auth headers (`x-apisports-key`, `X-Goog-Api-Key`, `Authorization`) are never logged (FR-T8, FR-O6). A `structlog` processor scrubs the same patterns from any log event as a backstop.
 6. **Metrics.** Each call logs provider, endpoint name (not full URL), status, latency, budget used/remaining (FR-O4, FR-O4a).
@@ -450,11 +451,11 @@ Every outbound call goes through `ProviderClient.request(provider, ...)`, which 
 
 | Item | Design |
 |---|---|
-| Auth | `x-apisports-key` header **[verify]** |
-| Endpoints | Season games (`/games?league=<NFL>&season=<YYYY>`), games by date (`/games?league=<NFL>&date=<YYYY-MM-DD>`), standings (`/standings?league=<NFL>&season=<YYYY>`) **[verify paths, NFL league ID, field names, and that one season call returns all games without pagination]** |
-| Budget | 100/day. Defaults: schedule 2, standings 1, 10% reserve, rest for polling (A15). Local budget from M6: 30 (NFR-22) |
+| Auth | `x-apisports-key` header; base URL `https://v1.american-football.api-sports.io`; NFL league ID 1 (confirmed T4) |
+| Endpoints | Season games (`/games?league=1&season=<YYYY>`: one call, all games, no pagination), teams (`/teams?league=1&season=<YYYY>`), standings (`/standings?league=1&season=<YYYY>`), games by date (`/games?league=1&date=<YYYY-MM-DD>`, M4). Plan and parameter errors come back as HTTP 200 with a non-empty `errors` object |
+| Plan and budget | Pro plan: 7,500 requests/day, 300/minute. App budget `APISPORTS_DAILY_BUDGET` 1,000 (a safety cap), 10% reserve. Typical use: schedule 1–2, standings 1, seeding teams 2 (once), hourly score polling (A15). Local budget from M6: 30 (NFR-22) |
 | Mapping | `apisports_team_id` → `teams.id`; unmapped teams or games are logged and skipped (FR-LS10, FR-ST2) |
-| Status mapping | Provider status codes map to `scheduled`/`in_progress`/`halftime`/`final`/`final_ot`/`postponed`/`cancelled` via a table in the adapter **[verify codes]** |
+| Mapping | Times come as a UTC `timestamp`; a `time` of `00:00` marks a TBD kickoff and `date` is then the game day. Stages: `Pre Season` (dropped, BR-W3), `Regular Season` (`Week N`), `Post Season` (`Wild Card`, `Divisional Round`, `Conference Championships`, `Super Bowl` → weeks 19–22; `Pro Bowl` dropped). Undecided playoff teams have ID 0. Status codes `NS`, `Q1`–`Q4`, `OT`, `HT`, `FT`, `AOT`, `PST`, `CANC` map to `scheduled`/`in_progress`/`halftime`/`final`/`final_ot`/`postponed`/`cancelled` (`NS`, `FT`, `AOT` seen in T4; the live codes are confirmed in M4) |
 | Contract tests | Recorded real responses (sanitized) in `tests/contract/fixtures/apisports/` |
 
 ### 8.4 Ticketmaster Discovery (tickets)
@@ -497,16 +498,16 @@ All functions are pure, typed and unit-tested with boundary cases (AC-26).
 
 | Module | Functions | BRD |
 |---|---|---|
-| `geo.py` | `haversine_miles(a, b)`; `is_local(home, venue, local_miles=75)` | A5 |
+| `geo.py` | `haversine_miles(a, b)`; `is_local(home, venue, local_miles=75)` (unknown venue → `None`, never local); `nearest_zip(point, candidates)` (nearest ZIP for "Use my location"; generic over the key, so seed also uses it to give each ZIP its nearest place) | A5, FR-P3 |
 | `travel.py` | `travel_eligible(pref, game, distance_mi, tags) -> Eligibility(allowed, reason)`: Low means local only; Medium means local, or any High-weight tag; High means any US game; international is never eligible; unknown distance is never eligible | BR-T1–T5 |
 | `budget.py` | `filter_offers(offers, max_cents) -> (kept, excluded)`; `within_budget(offer, max_cents) -> True/False/Unknown`; `estimated_total(offer, party_size)` | BR-S4–S7 |
-| `significance.py` | `schedule_tags(game, teams, rivalries)`; `record_tags(game, standings, week, cfg)` with the Week ≥ 4 gate, staleness gate and thresholds; `win_rate(w, l, t)`; `has_high_tag(tags)` | 7.6, BR-G1–G6 |
+| `significance.py` | `schedule_tags(games, teams, rivalries, primetime_start_et)` over a whole season (home opener / home finale depend on schedule position; primetime = Thu, Sun or Mon kickoff at or after `PRIMETIME_START_ET` in Eastern time); `record_tags(game, standings, week, cfg)` with the Week ≥ 4 gate, staleness gate and thresholds; `win_rate(w, l, t)`; `has_high_tag(tags)` | 7.6, BR-G1–G6 |
 | `suitability.py` | `rank_options(options, prefs, cfg) -> list[RankedOption]`; formula and examples below. Ineligible options are excluded, not just down-ranked | 7.2–7.4, BR-V5 |
 | `watches.py` | `evaluate_ticket_watch(watch, event_result, now) -> Outcome(triggered, reason)`; stale data never triggers | FR-W1, BR-N8 |
 | `alerts.py` | `cooldown_elapsed(last_alerted_at, now, cooldown) -> bool`; `dedup_key(source, source_id)`; `allowed_by_level(level, category)`; `within_daily_cap(count, cap)` | BR-N1–N11 |
 | `polling.py` | `game_windows(games, cfg)` (merging overlaps); `should_poll(now, windows, last_poll_at, interval)`; `resolve_scores_mode(setting, now, windows, interval)` | FR-LS5–LS6, LS13 |
 | `season.py` | `active_season(now, seasons, games)`: switches to the next season once the Super Bowl is final or one day after its scheduled date | FR-O1c |
-| `planning.py` | `planning_status(game, now, window_days=30) -> Open / OpensOn(date) / Closed` | FR-SC8 |
+| `planning.py` | `planning_status(kickoff_at, game_date, status, now, window_days=30) -> Open / OpensOn(at) / Closed` (TBD time uses `game_date`; past, final or cancelled games are `Closed`) | FR-SC8 |
 | `schedule_diff.py` | `diff_games(stored, incoming) -> list[Change]` | FR-O2 |
 
 **Polling rule.** During a game window, poll when no poll has happened in this window yet or when `now − last_poll_at ≥ SCORES_POLL_INTERVAL_MIN` (default 60). One "games by date" call covers every game in progress. A final confirmation poll runs once after each window ends. Budgets are counted per UTC day because that's when API-Sports resets; a window that crosses midnight UTC (e.g. Sunday Night Football) simply draws its later polls from the next day's budget. At hourly polling a full Sunday uses about 12–15 requests, so the budget is a safety guard rather than a constraint.
@@ -870,13 +871,13 @@ class Proposal(BaseModel):
 | Method & path | Purpose | BRD |
 |---|---|---|
 | `GET /health`, `GET /ready` | Liveness / DB readiness | NFR |
-| `GET /me` · `DELETE /me` | Profile; account deletion | FR-A4 |
+| `GET /me` · `DELETE /me` | Profile (with `onboarded`); account deletion (`503 auth_deletion_failed` if the auth user couldn't be deleted; retry) | FR-A4 |
 | `POST /me/age-confirmation` | Record 18+ confirmation | FR-A3 |
 | `GET /me/preferences` · `PUT /me/preferences` | P1–P6 | FR-P1–P4 |
 | `GET /me/notification-settings` · `PUT ...` | Level + per-category email | BR-N9 |
-| `GET /zip/{zip}` | Validate ZIP | FR-P3 |
+| `GET /zip/{zip}` · `POST /zip/nearest` | Validate ZIP; nearest ZIP for "Use my location" (coordinates in the body so they never reach URLs or access logs) | FR-P3, FR-P3a |
 | `GET /teams` | Teams | FR-SC |
-| `GET /games` | Filters: `team`, `week`, `from`, `to`, `favorites=true` | FR-SC1–2 |
+| `GET /games` | Filters: `season`, `team`, `week`, `from`, `to`, `favorites=true`; cursor pagination | FR-SC1–2 |
 | `GET /games/live` | In-progress + recent finals for favorites | FR-LS4 |
 | `GET /games/{id}` | Detail incl. tags, records, score, distance | FR-SC3–7, FR-ST4 |
 | `GET /games/{id}/tickets` | Ticket lookup (budget-filtered) | FR-T1–T4 |
@@ -891,7 +892,7 @@ class Proposal(BaseModel):
 | `POST /watches` · `GET /watches` · `PATCH /watches/{id}` (pause/resume) · `DELETE /watches/{id}` | Watches | FR-W |
 | `GET /notifications` · `POST /notifications/{id}/read` · `POST /notifications/read-all` | Inbox | FR-N1 |
 | `GET /reminders/upcoming` | Reminder feed for local scheduling | FR-N7–N9 |
-| `GET /season` | Active season, whether its schedule is available, planning window length | FR-O1c, FR-SC8 |
+| `GET /season` | Active season, whether its schedule is available, current week, week labels, planning window length, schedule source and last update | FR-O1c, FR-SC8, FR-SC4 |
 | `POST /app-events` | Batch of up to 20 allowlisted client events (§15.1) | SM1, SM4 |
 | `GET /email/unsubscribe?token=` · `POST /email/unsubscribe?token=` | Public; signed per-category token. GET shows a confirmation page (mail scanners prefetch links, so GET never unsubscribes); POST unsubscribes and is the RFC 8058 one-click target named in the `List-Unsubscribe` / `List-Unsubscribe-Post` headers | FR-N3 |
 | `POST /webhooks/resend` | Public; signature-verified | FR-N6 |
@@ -911,13 +912,15 @@ Settings are loaded by `pydantic-settings` from environment variables (`.env` lo
 | `SUPABASE_URL` | `http://localhost:54321` | |
 | `SUPABASE_JWT_MODE` | `jwks` \| `secret` | §6 |
 | `SUPABASE_JWT_SECRET` | — | Only for `secret` mode |
-| `SUPABASE_SERVICE_ROLE_KEY` | — | Server only; account deletion |
-| `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | — | Only for the Data API exposure test (`pytest -m supabase`) |
+| `SUPABASE_SECRET_KEY` | — | Server only; account deletion (Auth Admin API) and the Data API exposure test |
+| `SUPABASE_PUBLISHABLE_KEY` | — | Only for the Data API exposure test (`pytest -m supabase`) |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | — | |
 | `OPENAI_PRICE_INPUT_PER_MTOK`, `OPENAI_PRICE_OUTPUT_PER_MTOK` | — | Cost estimation |
 | `AGENT_MAX_TOOL_CALLS` / `AGENT_MAX_REPLANS` / `AGENT_TIMEOUT_S` / `AGENT_MAX_COST_USD` | 8 / 4 / 45 / 0.05 | AG-1, A16 |
 | `AGENT_DAILY_RUNS_PER_USER`, `LLM_DAILY_SPEND_CAP_USD` | 15 / 0.65 | FR-O8–O9 (enforced from M6); daily cap × 31 stays within the $20 monthly budget (A16) |
-| `APISPORTS_KEY`, `APISPORTS_DAILY_BUDGET`, `APISPORTS_RESERVE_PCT` | — / 100 / 10 | |
+| `APISPORTS_KEY`, `APISPORTS_DAILY_BUDGET`, `APISPORTS_RESERVE_PCT` | — / 1000 / 10 | Pro plan quota is 7,500/day; the budget is the app's safety cap |
+| `APISPORTS_BASE_URL`, `APISPORTS_LEAGUE_ID`, `APISPORTS_RATE_PER_MIN` | `https://v1.american-football.api-sports.io` / 1 / 10 | §8.2–8.3 (the plan allows 300/min) |
+| `PROVIDER_BUDGET_WARN_PCT` | 80 | FR-O4a |
 | `SCORES_MODE`, `SCORES_POLL_INTERVAL_MIN`, `REPLAY_GAME`, `REPLAY_SPEED`, `SCORES_RECORD` | `auto` / 60 / `sample-1` / 10 / false | §9, §10.4 |
 | `GAME_WINDOW_LEAD_MIN`, `GAME_WINDOW_MAX_H` | 15 / 4.5 | FR-LS5, A14 |
 | `SCHEDULE_SYNC_UTC`, `STANDINGS_SYNC_UTC`, `RETENTION_CLEANUP_UTC` | `09:00` / `10:00` / `08:00` | §10.2 |
@@ -932,10 +935,11 @@ Settings are loaded by `pydantic-settings` from environment variables (`.env` lo
 | `PROVIDER_{APISPORTS,TICKETMASTER,PLACES,OPENAI,RESEND}_ENABLED` | `true` | Kill switches (FR-O5) |
 | `STANDINGS_ENABLED` | `true` | FR-ST8 |
 | `LOCAL_AREA_MILES`, `RECORD_TAGS_FROM_WEEK`, `STANDINGS_MAX_AGE_DAYS` | 75 / 4 / 8 | A5, BR-G4–G5 |
+| `PRIMETIME_START_ET` | `19:00` | BRD §7.6 primetime tag |
 | `WATCH_INTERVAL_MIN`, `ALERT_COOLDOWN_H`, `DAILY_EMAIL_CAP`, `MAX_ACTIVE_WATCHES`, `WATCH_TROUBLE_AFTER_FAILURES` | 30 / 12 / 5 / 10 / 3 | A11, FR-W11 |
 | `EMAIL_MAX_ATTEMPTS` | 5 | §10.2 `email_dispatch` |
 | `RETENTION_SESSIONS_DAYS`, `RETENTION_NOTIFICATIONS_DAYS`, `RETENTION_WATCHES_DAYS` | 90 / 90 / 30 | NFR-16, §7.7 |
-| `RATE_LIMIT_PER_MIN`, `RATE_LIMIT_AGENT_PER_MIN` | 60 / 10 | NFR-15, §12 |
+| `RATE_LIMIT_PER_MIN`, `RATE_LIMIT_IP_PER_MIN`, `RATE_LIMIT_AGENT_PER_MIN` | 60 / 60 / 10 | NFR-15, §12; per user, per IP (unauthenticated routes), agent messages |
 | `CORS_ORIGINS` | `http://localhost:8081` | Expo web dev origin |
 
 **Client (public by design)**, in `apps/mobile/.env` and `apps/web/.env` (each app has a `.env.example`; Expo reads `.env` from the app folder): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_SCORE_REFRESH_SEC` (default 300; how often open score screens reload from the backend cache). These values ship inside the apps: never put a secret in an `EXPO_PUBLIC_*` variable (NFR-12).
@@ -1013,7 +1017,7 @@ cp apps/mobile/.env.example apps/mobile/.env   # use the Mac's LAN IP for phones
 cd backend && uv sync
 uv run python -m app.cli bootstrap-db  # backend role + schema app (once per database)
 uv run alembic upgrade head
-uv run python -m app.cli seed        # teams, rivalries, ZIP centroids (M1)
+uv run python -m app.cli seed        # places, ZIP centroids, rivalries, teams (M1; 2 API-Sports requests)
 uv run python -m app.cli sync-schedule   # M1 (sync-standings arrives in M4)
 uv run uvicorn app.main_api:create_app --factory --reload --host 0.0.0.0   # API on :8000
 uv run python -m app.main_worker                            # worker, scores mode auto (M4)
@@ -1049,7 +1053,7 @@ Each milestone's requirements (what must be built, as a checklist citing this do
 | Milestone | Requirements | Technical design | Status |
 |---|---|---|---|
 | M0: Foundation | (BRD §13) | `m0-foundation.md` | Code complete; CI green; exit pending manual tests on web, iOS and Android |
-| M1: Preferences and schedule | `m1-preferences-and-schedule.md` | not yet | Planned |
+| M1: Preferences and schedule | `m1-preferences-and-schedule.md` | `m1-preferences-and-schedule.md` | Code complete; exit pending manual tests on web, iOS and Android, the Maestro flow, and CI |
 | M2: Tickets and venues | `m2-tickets-and-venues.md` | not yet | Planned |
 | M3: Agent and trace | `m3-agent-and-trace.md` | not yet | Planned |
 | M4: Scores and standings | `m4-scores-and-standings.md` | not yet | Planned |
@@ -1089,7 +1093,7 @@ M0–M5 run entirely on a developer's machine (§17); hosting is only in M6.
 | D5 | Places provider | **Google Places (New)**. No geocoding API (see D11). |
 | D6 | LLM provider | **OpenAI** via LangChain; model chosen with the eval suite (V6); caps per BRD A16. |
 | D8 | Developer accounts | Apple Developer Program and Google Play Console accounts are set up in M6, only for TestFlight / store distribution. Before that, the mobile app runs on simulators, Expo Go or a development build. |
-| D10 | Score provider | **API-Sports (American Football), free plan**, also used for the schedule and standings. |
+| D10 | Score provider | **API-Sports (American Football), Pro plan** (the free plan only covers past seasons), also used for the schedule and standings. |
 | D11 | Geocoding | Not used. ZIP entry backed by a bundled public-domain ZIP coordinates dataset; venue cities by the Census Places dataset. |
 | D12a | Email provider | **Resend**, sending from the backend only. Phone reminders are scheduled on the device with Expo Notifications (no server push service). |
 
@@ -1098,8 +1102,6 @@ M0–M5 run entirely on a developer's machine (§17); hosting is only in M6.
 | ID | Item | Needed by |
 |---|---|---|
 | T2 | Confirm `expo/fetch` streaming for SSE on native with the pinned Expo SDK (58) | M3 |
-| T4 | API-Sports endpoint paths, NFL league ID, status codes, response fields, and which team/venue fields (division, venue city/state) are available (contract fixtures) | M1 |
-| T10 | Confirm the proposed defaults for open design questions UX1, UX4 and UX5 in `.claude/docs/ui-ux-design.md` | Before M1 UI work |
 | T11 | Social sign-in (M6): offering Google sign-in on iOS generally requires Sign in with Apple for App Store and external TestFlight review. Decide the providers (Google only on web/Android, or Google + Apple) and configure them in the hosted Supabase project | M6 |
 | T5 | Ticketmaster matching parameters and team attraction IDs | M2 |
 | T6 | Google Places endpoint choice and field mask vs. pricing tier | M2 |
@@ -1110,7 +1112,7 @@ M0–M5 run entirely on a developer's machine (§17); hosting is only in M6.
 
 | ID | Item | Needed by |
 |---|---|---|
-| V1 | Current-season schedule, scores and standings on the API-Sports free plan: **confirmed 2026-10-13**. Still to check: observed score update latency (first live game window) and attribution / portfolio-use terms. | M4 |
+| V1 | Current-season schedule, scores and standings on the API-Sports Pro plan: **confirmed 2026-10-29** (contract fixtures recorded in M1). Still to check: observed score update latency (first live game window) and attribution / portfolio-use terms. | M4 |
 | V2 | Hosted Supabase free-tier limits, and whether inactive free projects are paused (affects an idle public demo). | M6 |
 | V3 | Railway plan pricing for two always-on services (API, scheduler worker). | M6 |
 | V4 | Ticketmaster terms of use: caching duration, attribution and display requirements. | M2 |
@@ -1138,7 +1140,7 @@ These requirements are defined here rather than in the BRD because they describe
 
 | Dependency | Source | Data used | Limits and status | Fallback |
 |---|---|---|---|---|
-| Schedule, game status, scores, standings | API-Sports (American Football), free plan | Season schedule, status, scores, quarter/clock if available; daily standings | 100 requests/day (resets 00:00 UTC), 10 requests/minute, all endpoints. Current season confirmed (V1) | Curated schedule file (FR-O1b); last known score with "Scores paused" |
+| Schedule, game status, scores, standings | API-Sports (American Football), Pro plan | Season schedule, status, scores, quarter/clock if available; daily standings | 7,500 requests/day (resets 00:00 UTC), 300 requests/minute, all endpoints. Current season confirmed (V1) | Curated schedule file (FR-O1b); last known score with "Scores paused" |
 | Team and venue reference data | API-Sports + Census Places coordinates + curated overrides and rivalries files | Teams, divisions, venues and coordinates, featured rivalries | Internal (FR-O1a) | n/a |
 | Tickets | Ticketmaster Discovery API, free public tier | Event match, availability, price range, purchase URL | 5,000 calls/day; 5 req/s (2 req/s on some endpoints, so plan for 2); pagination depth < 1,000; API key as `apikey` query parameter (V4) | "Ticket data unavailable" limitation |
 | Venues | Google Places (New) | Bars near a location, hours, contact, rating | Billing account required even within free usage (V5) | "Venue search unavailable" limitation |
@@ -1156,7 +1158,7 @@ These requirements are defined here rather than in the BRD because they describe
 | ID | Requirement | Pri |
 |---|---|---|
 | FR-LS5 | Score polling runs only during **game windows**, from shortly before kickoff (default 15 min) until the game is final or a maximum duration passes (default 4.5 hours). No polling outside game windows. | M |
-| FR-LS6 | During game windows, scores are polled on a **fixed interval** (default every 60 minutes) with one shared "games by date" request per cycle. A daily request budget below the free-tier limit acts as a hard guard (budgets reset at 00:00 UTC; a window crossing midnight UTC draws from the next day's budget). A share (default 10%) is reserved for final-score confirmation and recovery. | M |
+| FR-LS6 | During game windows, scores are polled on a **fixed interval** (default every 60 minutes) with one shared "games by date" request per cycle. A daily request budget below the plan's limit acts as a hard guard (budgets reset at 00:00 UTC; a window crossing midnight UTC draws from the next day's budget). A share (default 10%) is reserved for final-score confirmation and recovery. | M |
 | FR-LS7 | Polling fetches shared data once per cycle for all games in the window, no matter how many users are watching. User actions never trigger provider calls; clients read cached scores from the backend. | M |
 | FR-LS10 | Schedule and scores come from the same provider, so games are linked by the provider's game ID. Provider team IDs are mapped to canonical team data; unmappable records are logged and skipped, never attached to the wrong game. | M |
 | FR-LS11 | Open score views (Home "Live now", game detail) reload from the backend cache on a short interval (default every 5 minutes), on screen open and app foreground, and on pull-to-refresh. These reloads never call the score provider. | M |
@@ -1199,7 +1201,7 @@ These requirements are defined here rather than in the BRD because they describe
 | ID | Requirement | Pri |
 |---|---|---|
 | FR-O1d | The schedule is synced from API-Sports by a daily job (one season-wide request when supported) and on manual CLI trigger; requests count against the shared budget. | M |
-| FR-O1a | Team and venue reference data (conference, division, home venue and coordinates) comes from API-Sports where available, with coordinates from the bundled Census Places dataset; a curated overrides file fills gaps and a curated file holds featured rivalries. **[verify API-Sports fields in M1]** | M |
+| FR-O1a | Team and venue reference data (conference, division, home venue and coordinates) comes from API-Sports where available, with coordinates from the bundled Census Places dataset; a curated overrides file fills gaps (API-Sports gives venue cities without state or country) and a curated file holds featured rivalries. | M |
 | FR-O1b | Contingency: if API-Sports is unavailable for an extended period, a curated schedule file can be loaded through the same import path and change detection. | C |
 | FR-O3 | Structured logs for agent runs, tool calls, provider calls, Watch checks and notification delivery. | M |
 | FR-O4 | Provider errors, rate-limit responses, latency, LLM token usage and estimated cost are tracked. | M |
@@ -1224,7 +1226,7 @@ These requirements are defined here rather than in the BRD because they describe
 | ID | Assumption |
 |---|---|
 | A14 | Game-window defaults: start 15 min before kickoff, max 4.5 hours, poll every 60 minutes, 10% of the daily budget reserved. All configurable. |
-| A15 | API-Sports budget (100 requests/day): about 2 for the schedule sync, 1 for standings, 10% reserve, the rest for score polling. With hourly polling a full Sunday (about 11–12 hours of windows) uses roughly 12–15 requests. |
+| A15 | API-Sports budget (app cap 1,000 requests/day on the 7,500/day Pro plan): about 2 for the schedule sync, 1 for standings, 10% reserve, the rest for score polling. With hourly polling a full Sunday (about 11–12 hours of windows) uses roughly 12–15 requests. |
 
 ### 21.3 Technical acceptance criteria
 

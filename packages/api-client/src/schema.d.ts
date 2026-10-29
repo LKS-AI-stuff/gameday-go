@@ -4,6 +4,63 @@
  */
 
 export interface paths {
+    "/api/v1/app-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post App Events
+         * @description Up to 20 allowlisted product events (TDD §15.1).
+         */
+        post: operations["postAppEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Games
+         * @description Season games by week, team or the caller's favorites; cursor-paginated (FR-SC1, FR-SC2).
+         */
+        get: operations["listGames"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games/{game_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Game */
+        get: operations["getGame"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -35,7 +92,11 @@ export interface paths {
         get: operations["getMe"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Me
+         * @description Delete the account and all its data (FR-A4).
+         */
+        delete: operations["deleteMe"];
         options?: never;
         head?: never;
         patch?: never;
@@ -55,6 +116,45 @@ export interface paths {
          * @description Record the 18+ confirmation (FR-A3). Used after social sign-in (M6).
          */
         post: operations["confirmAge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notification-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Notification Settings */
+        get: operations["getNotificationSettings"];
+        /** Put Notification Settings */
+        put: operations["putNotificationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["getPreferences"];
+        /**
+         * Put Preferences
+         * @description Onboarding (P1-P6 plus the device time zone) and later edits from Settings (FR-P1, FR-P2).
+         */
+        put: operations["putPreferences"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -81,10 +181,250 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/season": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Season
+         * @description Active season, whether its schedule is out, weeks and freshness (FR-O1c, FR-SC4).
+         */
+        get: operations["getSeason"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Teams */
+        get: operations["listTeams"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/zip/nearest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Nearest Zip
+         * @description Nearest ZIP for "Use my location". Coordinates travel in the body, never in URLs.
+         */
+        post: operations["nearestZip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/zip/{zip_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Zip */
+        get: operations["getZip"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ClientEvent */
+        ClientEvent: {
+            /**
+             * Client Ts
+             * Format: date-time
+             */
+            client_ts: string;
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "onboarding_started" | "onboarding_completed" | "plan_requested" | "plan_first_step_rendered" | "plan_card_rendered" | "plan_saved" | "watch_created";
+            /**
+             * Platform
+             * @enum {string}
+             */
+            platform: "ios" | "android" | "web";
+            props?: components["schemas"]["EmptyProps"];
+        };
+        /**
+         * Coordinates
+         * @description Device position for "Use my location". Used for this request only, never stored.
+         */
+        Coordinates: {
+            /** Lat */
+            lat: number;
+            /** Lng */
+            lng: number;
+        };
+        /**
+         * EmptyProps
+         * @description No properties yet; anything sent is rejected rather than stored.
+         */
+        EmptyProps: Record<string, never>;
+        /** EventBatch */
+        EventBatch: {
+            /** Events */
+            events: components["schemas"]["ClientEvent"][];
+        };
+        /** GameDetail */
+        GameDetail: {
+            away: components["schemas"]["TeamRef"] | null;
+            /** Away Placeholder */
+            away_placeholder: string | null;
+            /** Distance Mi */
+            distance_mi: number | null;
+            /** Game Date */
+            game_date: string | null;
+            home: components["schemas"]["TeamRef"] | null;
+            /** Home Placeholder */
+            home_placeholder: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Is Sample */
+            is_sample: boolean;
+            /** Kickoff At */
+            kickoff_at: string | null;
+            /** Kickoff Tbd */
+            kickoff_tbd: boolean;
+            planning: components["schemas"]["Planning"];
+            /** Season */
+            season: number;
+            source: components["schemas"]["Source"];
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "regular" | "playoff";
+            /** Status */
+            status: string;
+            /** Tags */
+            tags: components["schemas"]["GameTag"][];
+            /** Travel Hint */
+            travel_hint: "outside_travel_area" | null;
+            /** Venue City */
+            venue_city: string | null;
+            /** Venue Country */
+            venue_country: string | null;
+            /** Venue Name */
+            venue_name: string | null;
+            /** Venue State */
+            venue_state: string | null;
+            /** Week */
+            week: number;
+            /** Week Label */
+            week_label: string;
+        };
+        /** GamePage */
+        GamePage: {
+            /** Items */
+            items: components["schemas"]["GameSummary"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** GameSummary */
+        GameSummary: {
+            away: components["schemas"]["TeamRef"] | null;
+            /** Away Placeholder */
+            away_placeholder: string | null;
+            /** Distance Mi */
+            distance_mi: number | null;
+            /** Game Date */
+            game_date: string | null;
+            home: components["schemas"]["TeamRef"] | null;
+            /** Home Placeholder */
+            home_placeholder: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Is Sample */
+            is_sample: boolean;
+            /** Kickoff At */
+            kickoff_at: string | null;
+            /** Kickoff Tbd */
+            kickoff_tbd: boolean;
+            planning: components["schemas"]["Planning"];
+            /** Season */
+            season: number;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "regular" | "playoff";
+            /** Status */
+            status: string;
+            /** Tags */
+            tags: components["schemas"]["GameTag"][];
+            /** Venue City */
+            venue_city: string | null;
+            /** Venue Country */
+            venue_country: string | null;
+            /** Venue Name */
+            venue_name: string | null;
+            /** Venue State */
+            venue_state: string | null;
+            /** Week */
+            week: number;
+            /** Week Label */
+            week_label: string;
+        };
+        /** GameTag */
+        GameTag: {
+            /** Detail */
+            detail?: string | null;
+            /** Tag */
+            tag: string;
+            /**
+             * Weight
+             * @enum {string}
+             */
+            weight: "high" | "medium" | "info";
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** Health */
         Health: {
             /**
@@ -105,8 +445,203 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Onboarded */
+            onboarded: boolean;
             /** Timezone */
             timezone: string | null;
+        };
+        /** NotificationCategories */
+        NotificationCategories: {
+            /** Digest */
+            digest: boolean;
+            /** Reminder */
+            reminder: boolean;
+            /** Schedule Change */
+            schedule_change: boolean;
+            /** Watch Hit */
+            watch_hit: boolean;
+        };
+        /** NotificationSettings */
+        NotificationSettings: {
+            categories: components["schemas"]["NotificationCategories"];
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "off" | "low" | "medium" | "high";
+        };
+        /** Place */
+        Place: {
+            /** Place Name */
+            place_name: string;
+            /** State */
+            state: string;
+        };
+        /** Planning */
+        Planning: {
+            /** Opens At */
+            opens_at?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "opens_on" | "closed";
+        };
+        /** Preferences */
+        Preferences: {
+            /** Favorite Team Ids */
+            favorite_team_ids: string[];
+            home_place: components["schemas"]["Place"] | null;
+            /** Home Zip */
+            home_zip: string;
+            /** Max Ticket Price Usd */
+            max_ticket_price_usd: number | null;
+            /**
+             * Notification Level
+             * @enum {string}
+             */
+            notification_level: "off" | "low" | "medium" | "high";
+            /**
+             * Spending
+             * @enum {string}
+             */
+            spending: "less" | "medium" | "more";
+            /** Timezone */
+            timezone: string | null;
+            /**
+             * Travel
+             * @enum {string}
+             */
+            travel: "low" | "medium" | "high";
+            /**
+             * Viewing
+             * @enum {string}
+             */
+            viewing: "stadium" | "bar" | "home" | "flexible";
+        };
+        /** PreferencesIn */
+        PreferencesIn: {
+            /** Favorite Team Ids */
+            favorite_team_ids: string[];
+            /** Home Zip */
+            home_zip: string;
+            /** Max Ticket Price Usd */
+            max_ticket_price_usd?: number | null;
+            /**
+             * Notification Level
+             * @enum {string}
+             */
+            notification_level: "off" | "low" | "medium" | "high";
+            /**
+             * Spending
+             * @enum {string}
+             */
+            spending: "less" | "medium" | "more";
+            /** Timezone */
+            timezone: string;
+            /**
+             * Travel
+             * @enum {string}
+             */
+            travel: "low" | "medium" | "high";
+            /**
+             * Viewing
+             * @enum {string}
+             */
+            viewing: "stadium" | "bar" | "home" | "flexible";
+        };
+        /** Season */
+        Season: {
+            /** Current Week */
+            current_week: number | null;
+            /** Planning Window Days */
+            planning_window_days: number;
+            /** Schedule Available */
+            schedule_available: boolean;
+            /** Schedule Updated At */
+            schedule_updated_at: string | null;
+            /**
+             * Source
+             * @default API-Sports
+             */
+            source: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "upcoming" | "active" | "completed";
+            /** Weeks */
+            weeks: components["schemas"]["WeekOption"][];
+            /** Year */
+            year: number;
+        };
+        /** Source */
+        Source: {
+            /**
+             * Game Synced At
+             * Format: date-time
+             */
+            game_synced_at: string;
+            /**
+             * Provider
+             * @default API-Sports
+             */
+            provider: string;
+            /** Schedule Updated At */
+            schedule_updated_at: string | null;
+        };
+        /** Team */
+        Team: {
+            /** City */
+            city: string;
+            /** Conference */
+            conference: string;
+            /** Division */
+            division: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Nickname */
+            nickname: string;
+        };
+        /** TeamRef */
+        TeamRef: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Nickname */
+            nickname: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /** WeekOption */
+        WeekOption: {
+            /** Label */
+            label: string;
+            /** Week */
+            week: number;
+        };
+        /** ZipInfo */
+        ZipInfo: {
+            /** Place Name */
+            place_name: string;
+            /** State */
+            state: string;
+            /** Zip */
+            zip: string;
         };
     };
     responses: never;
@@ -117,6 +652,106 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    postAppEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listGames: {
+        parameters: {
+            query?: {
+                season?: number | null;
+                week?: number | null;
+                team?: string | null;
+                favorites?: boolean;
+                from?: string | null;
+                to?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GamePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getGame: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -157,6 +792,31 @@ export interface operations {
             };
         };
     };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Data deleted; sign-in removal failed (retry) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     confirmAge: {
         parameters: {
             query?: never;
@@ -177,6 +837,112 @@ export interface operations {
             };
         };
     };
+    getNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+        };
+    };
+    putNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+        };
+    };
+    putPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getReady: {
         parameters: {
             query?: never;
@@ -193,6 +959,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    getSeason: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Season"];
+                };
+            };
+        };
+    };
+    listTeams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"][];
+                };
+            };
+        };
+    };
+    nearestZip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Coordinates"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZipInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getZip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                zip_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZipInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

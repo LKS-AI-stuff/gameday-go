@@ -1,4 +1,4 @@
-import { ApiError, createApiClient } from "./client";
+import { ApiError, ApiNetworkError, createApiClient } from "./client";
 
 function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
@@ -60,5 +60,46 @@ describe("createApiClient", () => {
       fetch: fetchMock,
     });
     await expect(client.getMe()).rejects.toMatchObject({ status: 502, code: "http_error" });
+  });
+});
+
+describe("M1 client methods", () => {
+  function client(fetchMock: jest.Mock) {
+    return createApiClient({
+      baseUrl: "http://api.test",
+      getAccessToken: async () => "tok",
+      fetch: fetchMock,
+    });
+  }
+
+  it("encodes game filters as a query string and skips undefined ones", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(jsonResponse(200, { items: [], next_cursor: null }));
+    await client(fetchMock).listGames({ week: 9, team: "CHI", favorites: true, from: undefined });
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://api.test/api/v1/games?week=9&team=CHI&favorites=true",
+    );
+  });
+
+  it("sends coordinates in the body, never the URL (FR-P3a)", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(jsonResponse(200, { zip: "60601", place_name: "Chicago", state: "IL" }));
+    await client(fetchMock).nearestZip(41.88, -87.62);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://api.test/api/v1/zip/nearest");
+    expect(JSON.parse(init.body)).toEqual({ lat: 41.88, lng: -87.62 });
+  });
+
+  it("treats 204 as success", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    await expect(client(fetchMock).deleteMe()).resolves.toBeNull();
+    expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+  });
+
+  it("reports unreachable servers as ApiNetworkError", async () => {
+    const fetchMock = jest.fn().mockRejectedValue(new TypeError("Network request failed"));
+    await expect(client(fetchMock).getSeason()).rejects.toBeInstanceOf(ApiNetworkError);
   });
 });

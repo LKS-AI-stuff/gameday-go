@@ -19,7 +19,20 @@ const config: ExpoConfig = {
   android: {
     package: "com.gamedaygo.app",
   },
-  plugins: ["expo-router", "expo-font", "expo-secure-store", "expo-splash-screen"],
+  plugins: [
+    "expo-router",
+    "expo-font",
+    "expo-secure-store",
+    "expo-splash-screen",
+    [
+      "expo-location",
+      {
+        // Asked only when the user taps "Use my location" (FR-P3); coordinates aren't stored.
+        locationWhenInUsePermission:
+          "GameDay Go uses your location once to find your ZIP code. It isn't stored.",
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
   },

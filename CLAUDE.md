@@ -17,7 +17,7 @@ Requirement and decision IDs (FR-, BR-, AG-, NFR-, AC-, SM-, G-, J-, P-, A-, D-,
 
 ## Status
 
-Current milestone: **M0** (`.claude/technical-designs/m0-foundation.md`), code complete, CI green; exit pending manual tests on web, iOS and Android. Build milestone by milestone (M0–M6). M0–M5 run entirely locally (TDD §17); hosting is only in M6. Update this line, the milestone's requirements and design docs, and the TDD §19 index when work lands or a milestone closes.
+Current milestone: **M1** (`.claude/technical-designs/m1-preferences-and-schedule.md`), code complete; exit pending manual tests on web, iOS and Android, the Maestro flow, and CI. M0 (`m0-foundation.md`) is code complete with its device tests also pending. Build milestone by milestone (M0–M6). M0–M5 run entirely locally (TDD §17); hosting is only in M6. Update this line, the milestone's requirements and design docs, and the TDD §19 index when work lands or a milestone closes.
 
 Workflow: `/generate-technical-design m<N>` (or a requirements filename) turns `.claude/requirements/<name>.md` into `.claude/technical-designs/<name>.md` (or `<name>-design.md` for a `*-requirements.md` file), proposing any new BRD entries for approval; `/implement-technical-design m<N>` builds that design, validates, gets an independent review, records the test steps and ticks the delivered requirements.
 
@@ -32,7 +32,7 @@ Workflow: `/generate-technical-design m<N>` (or a requirements filename) turns `
 - **Confirmation gate:** the agent only proposes saving a plan or creating a Watch; the user's tap creates it (FR-AG8).
 - **Times:** store and transfer UTC; always display with an explicit time zone (NFR-4).
 - **Tunables are config variables** (intervals, limits, caps, thresholds), with defaults from TDD §13.
-  - API-Sports' free tier is 100 requests/day. Backend score polling defaults to hourly; clients reload scores from the backend cache every 5 minutes (no provider cost).
+  - API-Sports is on the Pro plan (7,500 requests/day, 300/minute; the free plan has no current-season access). The app's own daily budget (`APISPORTS_DAILY_BUDGET`, default 1,000) is a safety cap. Backend score polling defaults to hourly; clients reload scores from the backend cache every 5 minutes (no provider cost).
 - **Providers:** live keys are used locally, in a git-ignored `.env`. Mocks and fixtures are only for automated tests, CI and score replay; tests never call live providers.
 - **Secrets:** never commit them, never log API keys (TDD §8.2), and never put one in an `EXPO_PUBLIC_*` variable, since those ship inside the apps (NFR-12).
 - **Minimal dependencies.** Libraries named in TDD §4–5 are pre-approved. Don't add any other service, library or provider without asking.
@@ -57,6 +57,8 @@ pnpm and uv live in `~/.local/bin`. Full setup is in `README.md` and TDD §17.
 - Migrations: `cd backend && uv run alembic upgrade head`; new DB: run `uv run python -m app.cli bootstrap-db` first. New tables call `secure_table()` (`migrations/hardening.py`).
 - API client: `pnpm api:generate` after any backend API change (CI fails on drift)
 - TS checks: `pnpm turbo run lint typecheck test`, `pnpm format:check`
-- Backend checks: `cd backend && uv run ruff format --check . && uv run ruff check . && uv run mypy app migrations tests && uv run pytest`
+- Backend checks: `cd backend && uv run ruff format --check . && uv run ruff check . && uv run mypy app migrations tests && uv run pytest` (tests use a separate `<db>_test` database, created automatically)
+- Reference data and schedule: `cd backend && uv run python -m app.cli seed`, then `uv run python -m app.cli sync-schedule` (live API-Sports; `cli budgets` shows today's usage)
+- Web E2E: `pnpm --filter @gamedaygo/web e2e` (Playwright; local stack, API and web app running)
 - Supabase exposure test: `cd backend && uv run pytest -m supabase` (needs the local stack)
 - CI: `.github/workflows/ci.yml` (frontend + backend jobs; mocks only, plain Postgres 17)

@@ -4,11 +4,13 @@ import argparse
 import asyncio
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import asyncpg
 from sqlalchemy.engine import make_url
 
+from app.core.logging import configure_logging
 from app.core.settings import get_settings
 
 
@@ -86,6 +88,82 @@ async def bootstrap_db() -> None:
     print(f"Role {role} and schema app are ready.")
 
 
+def build_centroids(zcta: Path, places: Path) -> None:
+    from app.modules.schedule.centroids import DATA_DIR, build
+
+    zips, place_count = build(zcta, places)
+    print(f"Wrote {zips} ZIPs and {place_count} places to {DATA_DIR}")
+
+
+async def seed(refresh_teams: bool) -> None:
+    """Reference data (TDD §7.1): places, ZIPs, teams (2 API-Sports requests), rivalries."""
+    from app.db.repositories import reference as reference_repo
+    from app.db.session import get_sessionmaker
+    from app.domain.season import default_season
+    from app.modules.schedule import reference
+    from app.providers.factory import provider_client, schedule_provider
+
+    settings = get_settings()
+    overrides = reference.load_overrides()
+    async with get_sessionmaker()() as session:
+        zips, places = await reference.seed_centroids(session)
+        await session.commit()
+        print(f"Places: {places}. ZIPs: {zips}.")
+        teams = await reference_repo.list_teams(session)
+        if len(teams) < 32 or refresh_teams:
+            client = provider_client(settings)
+            try:
+                provider = schedule_provider(settings, client)
+                season = default_season(datetime.now(UTC))
+                count = await reference.seed_teams(session, provider, season, overrides)
+            finally:
+                await client.aclose()
+            await session.commit()
+            print(f"Teams: {count} (from API-Sports, season {season}).")
+        else:
+            print(f"Teams: {len(teams)} already seeded (use --refresh-teams to reload).")
+        print(f"Featured rivalries: {await reference.seed_rivalries(session)}.")
+        await session.commit()
+
+
+async def sync_schedule(season: int | None) -> int:
+    from app.db.session import get_sessionmaker
+    from app.modules.schedule.sync import schedule_sync
+    from app.providers.factory import provider_client, schedule_provider
+
+    settings = get_settings()
+    client = provider_client(settings)
+    try:
+        provider = schedule_provider(settings, client)
+        result = await schedule_sync(get_sessionmaker(), provider, settings, season=season)
+    finally:
+        await client.aclose()
+    print(
+        f"Schedule sync {result.status}: seasons {list(result.seasons)}, "
+        f"{result.records} games, {result.changes} changes"
+        + (f", error {result.error}" if result.error else "")
+    )
+    return 0 if result.status == "succeeded" else 1
+
+
+async def budgets_report() -> None:
+    from sqlalchemy import select
+
+    from app.db.models import ProviderBudget
+    from app.db.session import get_sessionmaker
+
+    async with get_sessionmaker()() as session:
+        rows = await session.scalars(
+            select(ProviderBudget).order_by(ProviderBudget.day.desc()).limit(14)
+        )
+        for b in rows:
+            remaining = b.daily_limit - b.reserved - b.used
+            print(
+                f"{b.day} {b.provider}: used {b.used} of {b.daily_limit} "
+                f"(reserved {b.reserved}, remaining {remaining})"
+            )
+
+
 def export_openapi(path: Path) -> None:
     from app.main_api import create_app
 
@@ -100,12 +178,32 @@ def main() -> None:
     sub.add_parser("bootstrap-db", help="Create the backend DB role and schema")
     openapi = sub.add_parser("export-openapi", help="Write the OpenAPI schema as JSON")
     openapi.add_argument("path", type=Path)
+    centroids = sub.add_parser(
+        "build-centroids", help="Convert Census gazetteers into data/*_centroids.csv"
+    )
+    centroids.add_argument("zcta", type=Path)
+    centroids.add_argument("places", type=Path)
+    seed_cmd = sub.add_parser("seed", help="Load reference data (places, ZIPs, teams, rivalries)")
+    seed_cmd.add_argument("--refresh-teams", action="store_true")
+    sync = sub.add_parser("sync-schedule", help="Sync the active season's schedule")
+    sync.add_argument("--season", type=int)
+    sub.add_parser("budgets", help="Show provider request budgets")
     args = parser.parse_args()
 
+    if args.command in ("seed", "sync-schedule", "budgets"):
+        configure_logging(get_settings().log_level)
     if args.command == "bootstrap-db":
         asyncio.run(bootstrap_db())
     elif args.command == "export-openapi":
         export_openapi(args.path)
+    elif args.command == "build-centroids":
+        build_centroids(args.zcta, args.places)
+    elif args.command == "seed":
+        asyncio.run(seed(args.refresh_teams))
+    elif args.command == "sync-schedule":
+        sys.exit(asyncio.run(sync_schedule(args.season)))
+    elif args.command == "budgets":
+        asyncio.run(budgets_report())
 
 
 if __name__ == "__main__":

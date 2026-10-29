@@ -1,0 +1,45 @@
+# Mobile E2E (TDD §16): onboard → Home → Schedule → game detail, in Expo Go.
+# Needs the local stack, the API, `pnpm --filter @gamedaygo/mobile dev`, and a verified account
+# that hasn't onboarded yet. Run from the repo root:
+#   maestro test apps/mobile/.maestro/onboard-browse.yaml \
+#     -e EXPO_URL=exp://127.0.0.1:8082 -e EMAIL=you@example.com -e PASSWORD=your-password
+appId: host.exp.Exponent
+---
+- launchApp:
+    clearState: true
+- openLink: ${EXPO_URL}
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 60000
+- tapOn: "Email"
+- inputText: ${EMAIL}
+- tapOn: "Password"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: "Sign in"
+
+# Onboarding: six questions, then review (UI/UX §7.2).
+- assertVisible: "Who do you root for?"
+- assertVisible: "Step 1 of 6"
+- tapOn: "Chicago Bears"
+- tapOn: "Next"
+- tapOn: "ZIP code"
+- inputText: "60601"
+- hideKeyboard
+- assertVisible: "Chicago, IL"
+- repeat:
+    times: 5
+    commands:
+      - tapOn: "Next"
+- assertVisible: "Review"
+- tapOn: "Start planning"
+
+# Home and Schedule (FR-SC1, FR-SC2), then a game's detail with its source (FR-SC4).
+- assertVisible: "YOUR NEXT GAMES"
+- tapOn: "Schedule"
+- assertVisible: "SCHEDULE"
+- tapOn:
+    text: ".* at .*"
+    index: 0
+- assertVisible: "ABOUT THIS GAME"
+- assertVisible: "API-Sports · schedule updated.*"

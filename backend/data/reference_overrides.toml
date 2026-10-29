@@ -1,0 +1,101 @@
+# Gaps in API-Sports reference data (FR-O1a, TD13).
+#
+# API-Sports reports a game venue's name and city, but no state or country. Each venue city
+# in the schedule needs an entry: US cities give the state (coordinates then come from the
+# Census Places file), other cities give the country and city coordinates. Cities the
+# Places file can't resolve also give coordinates. `cli seed` and `cli sync-schedule` report
+# any venue city missing here; its games then have no distance and no international tag.
+#
+# Optional per-team overrides go under [teams.<code>] (name, nickname, city, state,
+# conference, division, home_venue_name).
+
+[venue_cities.Arlington]
+state = "TX"
+[venue_cities.Atlanta]
+state = "GA"
+[venue_cities.Baltimore]
+state = "MD"
+[venue_cities.Charlotte]
+state = "NC"
+[venue_cities.Chicago]
+state = "IL"
+[venue_cities.Cincinnati]
+state = "OH"
+[venue_cities.Cleveland]
+state = "OH"
+[venue_cities.Denver]
+state = "CO"
+[venue_cities.Detroit]
+state = "MI"
+[venue_cities."East Rutherford"]
+state = "NJ"
+[venue_cities.Foxborough]
+state = "MA"
+[venue_cities.Glendale]
+state = "AZ"
+[venue_cities."Green Bay"]
+state = "WI"
+[venue_cities.Houston]
+state = "TX"
+[venue_cities.Indianapolis]
+state = "IN"
+[venue_cities.Inglewood]
+state = "CA"
+[venue_cities.Jacksonville]
+state = "FL"
+[venue_cities."Kansas City"]
+state = "MO"
+[venue_cities.Landover]
+state = "MD"
+[venue_cities."Las Vegas"]
+state = "NV"
+[venue_cities."Miami Gardens"]
+state = "FL"
+[venue_cities.Minneapolis]
+state = "MN"
+[venue_cities.Nashville]
+state = "TN"
+[venue_cities."New Orleans"]
+state = "LA"
+[venue_cities."Orchard Park"]
+state = "NY"
+[venue_cities.Philadelphia]
+state = "PA"
+[venue_cities.Pittsburgh]
+state = "PA"
+[venue_cities."Santa Clara"]
+state = "CA"
+[venue_cities.Seattle]
+state = "WA"
+[venue_cities.Tampa]
+state = "FL"
+
+# International games (BR-T4: shown, never recommended as trips). City-level coordinates.
+[venue_cities.London]
+country = "GB"
+lat = 51.5074
+lng = -0.1278
+[venue_cities.Madrid]
+country = "ES"
+lat = 40.4168
+lng = -3.7038
+[venue_cities.Melbourne]
+country = "AU"
+lat = -37.8136
+lng = 144.9631
+[venue_cities."Mexico City"]
+country = "MX"
+lat = 19.4326
+lng = -99.1332
+[venue_cities.Munich]
+country = "DE"
+lat = 48.1351
+lng = 11.5820
+[venue_cities."Rio De Janeiro"]
+country = "BR"
+lat = -22.9068
+lng = -43.1729
+[venue_cities.Saint-Denis]
+country = "FR"
+lat = 48.9362
+lng = 2.3574

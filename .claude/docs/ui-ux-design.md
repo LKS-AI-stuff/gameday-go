@@ -44,7 +44,7 @@ Main app
 │     ├── Saved plan detail
 │     └── Watch detail / edit
 ├── Inbox                   alert history
-└── Settings                preferences, notifications, appearance, account, about
+└── Settings                preferences, notifications, account, about
 ```
 
 ### 2.2 Navigation patterns
@@ -246,7 +246,7 @@ When the game is live or final, a `ScoreStrip` sits directly under the hero.
 | Tag weight | Style |
 |---|---|
 | High (Playoff game, Division rivalry, Featured rivalry, Division leaders meet, Top-record matchup, Late-season division race) | Outlined, `color.primaryText` border and text |
-| Medium (Primetime, Home opener / finale, Winning-record matchup) | Outlined, `color.outline` border, `color.text` |
+| Medium (Primetime, Home opener / home finale, Winning-record matchup) | Outlined, `color.outline` border, `color.text` |
 | Informational (International game, Lopsided matchup) | Text-only, muted |
 
 Tapping a tag opens a small sheet explaining it in one sentence (e.g. "Both teams lead their divisions, per API-Sports standings as of Tue 6:00 AM").
@@ -770,13 +770,15 @@ Tapping opens the saved plan.
 4. **Set an alert:** Plan Card "Set a ticket alert" → Snackbar → Alerts list → (email arrives) → Inbox → Game detail.
 5. **Game day:** local reminder → saved plan → game detail with live score.
 
-## 11. Open Design Questions
+## 11. Design Questions
 
-| ID | Question | Proposed default |
+All decided.
+
+| ID | Question | Decision |
 |---|---|---|
-| UX1 | Wordmark / app icon | Text wordmark "GAMEDAY GO" in Oswald; icon: orange-red square with a white "GG" monogram. Designed in M0 |
+| UX1 | Wordmark / app icon | Decided: text wordmark "GAMEDAY GO" in Oswald (built in M0); icon: orange-red square with a "GG" monogram |
 | UX2 | Imagery | Decided: the night-stadium background photo behind every screen, provided by the product owner; game-detail heroes keep the black band with drawn field lines |
 | UX3 | Theme | Decided: one dark theme on every platform, regardless of the device setting (NFR-5); no light theme or theme setting |
-| UX4 | Team color accents | None (A12: neutral styling); team identity by text only |
-| UX5 | Empty-state illustrations | Icons only in MVP |
+| UX4 | Team color accents | Decided: none (A12: neutral styling); team identity by text only |
+| UX5 | Empty-state illustrations | Decided: icons only in MVP |
 | UX6 | Visual mockups | Done: clickable mockup of Home, Schedule, Game detail, Plan session, Trace and My Game Days (dark theme), approved 2026-10-14: https://claude.ai/artifact/8URqVFmbGDbwAC3sSk8saS |

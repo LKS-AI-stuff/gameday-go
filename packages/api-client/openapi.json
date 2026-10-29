@@ -1,6 +1,594 @@
 {
   "components": {
     "schemas": {
+      "ClientEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "client_ts": {
+            "format": "date-time",
+            "title": "Client Ts",
+            "type": "string"
+          },
+          "name": {
+            "enum": [
+              "onboarding_started",
+              "onboarding_completed",
+              "plan_requested",
+              "plan_first_step_rendered",
+              "plan_card_rendered",
+              "plan_saved",
+              "watch_created"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "platform": {
+            "enum": [
+              "ios",
+              "android",
+              "web"
+            ],
+            "title": "Platform",
+            "type": "string"
+          },
+          "props": {
+            "$ref": "#/components/schemas/EmptyProps"
+          }
+        },
+        "required": [
+          "name",
+          "platform",
+          "client_ts"
+        ],
+        "title": "ClientEvent",
+        "type": "object"
+      },
+      "Coordinates": {
+        "additionalProperties": false,
+        "description": "Device position for \"Use my location\". Used for this request only, never stored.",
+        "properties": {
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lng",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ],
+        "title": "Coordinates",
+        "type": "object"
+      },
+      "EmptyProps": {
+        "additionalProperties": false,
+        "description": "No properties yet; anything sent is rejected rather than stored.",
+        "properties": {},
+        "title": "EmptyProps",
+        "type": "object"
+      },
+      "EventBatch": {
+        "additionalProperties": false,
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ClientEvent"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "EventBatch",
+        "type": "object"
+      },
+      "GameDetail": {
+        "properties": {
+          "away": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "away_placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Away Placeholder"
+          },
+          "distance_mi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Mi"
+          },
+          "game_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Date"
+          },
+          "home": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "home_placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Placeholder"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_favorite": {
+            "title": "Is Favorite",
+            "type": "boolean"
+          },
+          "is_sample": {
+            "title": "Is Sample",
+            "type": "boolean"
+          },
+          "kickoff_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kickoff At"
+          },
+          "kickoff_tbd": {
+            "title": "Kickoff Tbd",
+            "type": "boolean"
+          },
+          "planning": {
+            "$ref": "#/components/schemas/Planning"
+          },
+          "season": {
+            "title": "Season",
+            "type": "integer"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "stage": {
+            "enum": [
+              "regular",
+              "playoff"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/GameTag"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "travel_hint": {
+            "anyOf": [
+              {
+                "const": "outside_travel_area",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Travel Hint"
+          },
+          "venue_city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue City"
+          },
+          "venue_country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Country"
+          },
+          "venue_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Name"
+          },
+          "venue_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue State"
+          },
+          "week": {
+            "title": "Week",
+            "type": "integer"
+          },
+          "week_label": {
+            "title": "Week Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "season",
+          "week",
+          "week_label",
+          "stage",
+          "game_date",
+          "kickoff_at",
+          "kickoff_tbd",
+          "home",
+          "away",
+          "home_placeholder",
+          "away_placeholder",
+          "venue_name",
+          "venue_city",
+          "venue_state",
+          "venue_country",
+          "status",
+          "tags",
+          "planning",
+          "distance_mi",
+          "is_favorite",
+          "is_sample",
+          "source",
+          "travel_hint"
+        ],
+        "title": "GameDetail",
+        "type": "object"
+      },
+      "GamePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GameSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "GamePage",
+        "type": "object"
+      },
+      "GameSummary": {
+        "properties": {
+          "away": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "away_placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Away Placeholder"
+          },
+          "distance_mi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Mi"
+          },
+          "game_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Date"
+          },
+          "home": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeamRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "home_placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Placeholder"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_favorite": {
+            "title": "Is Favorite",
+            "type": "boolean"
+          },
+          "is_sample": {
+            "title": "Is Sample",
+            "type": "boolean"
+          },
+          "kickoff_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kickoff At"
+          },
+          "kickoff_tbd": {
+            "title": "Kickoff Tbd",
+            "type": "boolean"
+          },
+          "planning": {
+            "$ref": "#/components/schemas/Planning"
+          },
+          "season": {
+            "title": "Season",
+            "type": "integer"
+          },
+          "stage": {
+            "enum": [
+              "regular",
+              "playoff"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/GameTag"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "venue_city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue City"
+          },
+          "venue_country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Country"
+          },
+          "venue_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Name"
+          },
+          "venue_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue State"
+          },
+          "week": {
+            "title": "Week",
+            "type": "integer"
+          },
+          "week_label": {
+            "title": "Week Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "season",
+          "week",
+          "week_label",
+          "stage",
+          "game_date",
+          "kickoff_at",
+          "kickoff_tbd",
+          "home",
+          "away",
+          "home_placeholder",
+          "away_placeholder",
+          "venue_name",
+          "venue_city",
+          "venue_state",
+          "venue_country",
+          "status",
+          "tags",
+          "planning",
+          "distance_mi",
+          "is_favorite",
+          "is_sample"
+        ],
+        "title": "GameSummary",
+        "type": "object"
+      },
+      "GameTag": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          },
+          "weight": {
+            "enum": [
+              "high",
+              "medium",
+              "info"
+            ],
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag",
+          "weight"
+        ],
+        "title": "GameTag",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
       "Health": {
         "properties": {
           "status": {
@@ -28,6 +616,10 @@
             "title": "Id",
             "type": "string"
           },
+          "onboarded": {
+            "title": "Onboarded",
+            "type": "boolean"
+          },
           "timezone": {
             "anyOf": [
               {
@@ -44,9 +636,543 @@
           "id",
           "email",
           "age_confirmed",
-          "timezone"
+          "timezone",
+          "onboarded"
         ],
         "title": "Me",
+        "type": "object"
+      },
+      "NotificationCategories": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {
+            "title": "Digest",
+            "type": "boolean"
+          },
+          "reminder": {
+            "title": "Reminder",
+            "type": "boolean"
+          },
+          "schedule_change": {
+            "title": "Schedule Change",
+            "type": "boolean"
+          },
+          "watch_hit": {
+            "title": "Watch Hit",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "watch_hit",
+          "schedule_change",
+          "reminder",
+          "digest"
+        ],
+        "title": "NotificationCategories",
+        "type": "object"
+      },
+      "NotificationSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "categories": {
+            "$ref": "#/components/schemas/NotificationCategories"
+          },
+          "level": {
+            "enum": [
+              "off",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "categories"
+        ],
+        "title": "NotificationSettings",
+        "type": "object"
+      },
+      "Place": {
+        "properties": {
+          "place_name": {
+            "title": "Place Name",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "place_name",
+          "state"
+        ],
+        "title": "Place",
+        "type": "object"
+      },
+      "Planning": {
+        "properties": {
+          "opens_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "opens_on",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "Planning",
+        "type": "object"
+      },
+      "Preferences": {
+        "properties": {
+          "favorite_team_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Favorite Team Ids",
+            "type": "array"
+          },
+          "home_place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Place"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "home_zip": {
+            "title": "Home Zip",
+            "type": "string"
+          },
+          "max_ticket_price_usd": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Ticket Price Usd"
+          },
+          "notification_level": {
+            "enum": [
+              "off",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Notification Level",
+            "type": "string"
+          },
+          "spending": {
+            "enum": [
+              "less",
+              "medium",
+              "more"
+            ],
+            "title": "Spending",
+            "type": "string"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "travel": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Travel",
+            "type": "string"
+          },
+          "viewing": {
+            "enum": [
+              "stadium",
+              "bar",
+              "home",
+              "flexible"
+            ],
+            "title": "Viewing",
+            "type": "string"
+          }
+        },
+        "required": [
+          "favorite_team_ids",
+          "home_zip",
+          "home_place",
+          "travel",
+          "spending",
+          "max_ticket_price_usd",
+          "viewing",
+          "notification_level",
+          "timezone"
+        ],
+        "title": "Preferences",
+        "type": "object"
+      },
+      "PreferencesIn": {
+        "additionalProperties": false,
+        "properties": {
+          "favorite_team_ids": {
+            "items": {
+              "maxLength": 8,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Favorite Team Ids",
+            "type": "array"
+          },
+          "home_zip": {
+            "pattern": "^\\d{5}$",
+            "title": "Home Zip",
+            "type": "string"
+          },
+          "max_ticket_price_usd": {
+            "anyOf": [
+              {
+                "maximum": 5000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Ticket Price Usd"
+          },
+          "notification_level": {
+            "enum": [
+              "off",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Notification Level",
+            "type": "string"
+          },
+          "spending": {
+            "enum": [
+              "less",
+              "medium",
+              "more"
+            ],
+            "title": "Spending",
+            "type": "string"
+          },
+          "timezone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "travel": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Travel",
+            "type": "string"
+          },
+          "viewing": {
+            "enum": [
+              "stadium",
+              "bar",
+              "home",
+              "flexible"
+            ],
+            "title": "Viewing",
+            "type": "string"
+          }
+        },
+        "required": [
+          "favorite_team_ids",
+          "home_zip",
+          "travel",
+          "spending",
+          "viewing",
+          "notification_level",
+          "timezone"
+        ],
+        "title": "PreferencesIn",
+        "type": "object"
+      },
+      "Season": {
+        "properties": {
+          "current_week": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Week"
+          },
+          "planning_window_days": {
+            "title": "Planning Window Days",
+            "type": "integer"
+          },
+          "schedule_available": {
+            "title": "Schedule Available",
+            "type": "boolean"
+          },
+          "schedule_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Updated At"
+          },
+          "source": {
+            "default": "API-Sports",
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "upcoming",
+              "active",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekOption"
+            },
+            "title": "Weeks",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "status",
+          "schedule_available",
+          "current_week",
+          "weeks",
+          "planning_window_days",
+          "schedule_updated_at"
+        ],
+        "title": "Season",
+        "type": "object"
+      },
+      "Source": {
+        "properties": {
+          "game_synced_at": {
+            "format": "date-time",
+            "title": "Game Synced At",
+            "type": "string"
+          },
+          "provider": {
+            "default": "API-Sports",
+            "title": "Provider",
+            "type": "string"
+          },
+          "schedule_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Updated At"
+          }
+        },
+        "required": [
+          "schedule_updated_at",
+          "game_synced_at"
+        ],
+        "title": "Source",
+        "type": "object"
+      },
+      "Team": {
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "conference": {
+            "title": "Conference",
+            "type": "string"
+          },
+          "division": {
+            "title": "Division",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nickname": {
+            "title": "Nickname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "nickname",
+          "city",
+          "conference",
+          "division"
+        ],
+        "title": "Team",
+        "type": "object"
+      },
+      "TeamRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nickname": {
+            "title": "Nickname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nickname",
+          "name"
+        ],
+        "title": "TeamRef",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WeekOption": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "week": {
+            "title": "Week",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "week",
+          "label"
+        ],
+        "title": "WeekOption",
+        "type": "object"
+      },
+      "ZipInfo": {
+        "properties": {
+          "place_name": {
+            "title": "Place Name",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "zip": {
+            "title": "Zip",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zip",
+          "place_name",
+          "state"
+        ],
+        "title": "ZipInfo",
         "type": "object"
       }
     },
@@ -63,6 +1189,260 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/app-events": {
+      "post": {
+        "description": "Up to 20 allowlisted product events (TDD \u00a715.1).",
+        "operationId": "postAppEvents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post App Events",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/api/v1/games": {
+      "get": {
+        "description": "Season games by week, team or the caller's favorites; cursor-paginated (FR-SC1, FR-SC2).",
+        "operationId": "listGames",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "season",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Season"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 22,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week"
+            }
+          },
+          {
+            "in": "query",
+            "name": "team",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Team"
+            }
+          },
+          {
+            "in": "query",
+            "name": "favorites",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Favorites",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Games",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/api/v1/games/{game_id}": {
+      "get": {
+        "operationId": "getGame",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "game_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Game Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Game",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Liveness: the process is up.",
@@ -86,6 +1466,27 @@
       }
     },
     "/api/v1/me": {
+      "delete": {
+        "description": "Delete the account and all its data (FR-A4).",
+        "operationId": "deleteMe",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "503": {
+            "description": "Data deleted; sign-in removal failed (retry)"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Me",
+        "tags": [
+          "identity"
+        ]
+      },
       "get": {
         "operationId": "getMe",
         "responses": {
@@ -138,6 +1539,147 @@
         ]
       }
     },
+    "/api/v1/me/notification-settings": {
+      "get": {
+        "operationId": "getNotificationSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Notification Settings",
+        "tags": [
+          "preferences"
+        ]
+      },
+      "put": {
+        "operationId": "putNotificationSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Notification Settings",
+        "tags": [
+          "preferences"
+        ]
+      }
+    },
+    "/api/v1/me/preferences": {
+      "get": {
+        "operationId": "getPreferences",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Preferences",
+        "tags": [
+          "preferences"
+        ]
+      },
+      "put": {
+        "description": "Onboarding (P1-P6 plus the device time zone) and later edits from Settings (FR-P1, FR-P2).",
+        "operationId": "putPreferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Preferences",
+        "tags": [
+          "preferences"
+        ]
+      }
+    },
     "/api/v1/ready": {
       "get": {
         "description": "Readiness: the database answers.",
@@ -157,6 +1699,158 @@
         "summary": "Ready",
         "tags": [
           "ops"
+        ]
+      }
+    },
+    "/api/v1/season": {
+      "get": {
+        "description": "Active season, whether its schedule is out, weeks and freshness (FR-O1c, FR-SC4).",
+        "operationId": "getSeason",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Season"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Season",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/api/v1/teams": {
+      "get": {
+        "operationId": "listTeams",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Team"
+                  },
+                  "title": "Response Listteams",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Teams",
+        "tags": [
+          "schedule"
+        ]
+      }
+    },
+    "/api/v1/zip/nearest": {
+      "post": {
+        "description": "Nearest ZIP for \"Use my location\". Coordinates travel in the body, never in URLs.",
+        "operationId": "nearestZip",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Coordinates"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZipInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Nearest Zip",
+        "tags": [
+          "preferences"
+        ]
+      }
+    },
+    "/api/v1/zip/{zip_code}": {
+      "get": {
+        "operationId": "getZip",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "zip_code",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{5}$",
+              "title": "Zip Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZipInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Zip",
+        "tags": [
+          "preferences"
         ]
       }
     }

@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.28.1",
     "pydantic-settings>=2.16.1",
     "pyjwt[crypto]>=2.15.1",
+    "slowapi>=0.1.10",
     "sqlalchemy[asyncio]>=2.1.5",
     "structlog>=26.1.0",
     "tenacity>=9.2.1",
