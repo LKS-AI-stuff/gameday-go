@@ -24,7 +24,9 @@ This milestone is implemented. The sections below describe what was built, how t
 | "Home opener / home finale" tag: the home team's first and last regular-season home game, international games excluded | Approved 2026-10-28; a literal "season finale" would tag all of Week 18 |
 | Team IDs are API-Sports team codes (`CHI`, `KC`, `LA`…); the nickname is the name's last word | T4: `/teams` returns a `code`, so no curated mapping is needed (FR-LS10 maps by `apisports_team_id`) |
 | API-Sports gives a venue's name and city only. `reference_overrides.toml` `[venue_cities]` gives each city's state (US) or country and coordinates (abroad). Teams' home venues come from where they play most US home games | T4. Unknown cities are logged (`venue_cities_unmapped`); their games have no distance and no international tag |
-| A `time` of `00:00` marks a TBD kickoff; `date` is then the game day (`games.game_date`) | T4. Real kickoffs are never exactly 00:00 UTC (8:00 PM ET slots are 00:15/00:20 UTC) |
+| TBD kickoffs are listed at `00:00` with `date` as the game day (`games.game_date`). A regular-season game counts as TBD only when two or more games share `00:00` on that date; playoff placeholders at `00:00` are always TBD | T4. 00:00 UTC is also a real 8:00 PM EDT kickoff, so a lone `00:00` game keeps its time |
+| The Super Bowl is listed as `Pro Bowl`: with no entry named `Super Bowl`, a `Pro Bowl` entry that is the season's last game and after the conference championships maps to week 22 | T4 (SoFi Stadium, Feb 14, 2027). Rollover (BR-W2) depends on it |
+| Until the Super Bowl is listed, a season ends `SEASON_END_FALLBACK_DAYS` (30) after its last known game | Keeps `active_season` from rolling over early or never (BR-W2) |
 | `games.sort_at`: kickoff, or 23:59 Eastern on the game day while TBD | One indexed column for ordering and cursor pagination, with TBD games last on their day |
 | ZIP place names ("Chicago, IL") are computed by `cli build-centroids`, picking the nearest Census place weighted by its land area | A plain nearest-centroid labeled ZIP 10001 "Hoboken"; weighting fixes big cities. Known gap: San Francisco's Census center is offshore, so downtown SF ZIPs read "Oakland" |
 | Undecided playoff slots are stored with "TBD" placeholders and deleted when API-Sports re-lists them under new IDs | T4: playoff placeholders have team ID 0 |
@@ -50,7 +52,7 @@ This milestone is implemented. The sections below describe what was built, how t
 **Domain rules** (`app/domain/`, pure, mypy strict; TDD §9)
 - `geo.py`: `haversine_miles`, `is_local` (unknown venue → never local), `nearest_zip`.
 - `planning.py`: `planning_status` → `Open` / `OpensOn(at)` (UTC) / `Closed`; TBD times use the game day (BR-W1, FR-SC8).
-- `season.py`: `active_season` with rollover once the Super Bowl is final or a day after it (BR-W2, FR-O1c).
+- `season.py`: `active_season` with rollover once the Super Bowl is final or a day after it, or `SEASON_END_FALLBACK_DAYS` after the last known game while no Super Bowl is listed (BR-W2, FR-O1c).
 - `significance.py`: `schedule_tags` for playoff, division rivalry, featured rivalry (either order), primetime (Thu/Sun/Mon from `PRIMETIME_START_ET` in Eastern time), home opener / home finale, international (BRD §7.6).
 - `schedule_diff.py`: `diff_games` (FR-O2).
 
@@ -74,14 +76,29 @@ This milestone is implemented. The sections below describe what was built, how t
 
 **Screens and components** (`packages/ui`)
 - Components: `AppBar`, `GameCard` (full and compact; open, opens-on, TBD, postponed/cancelled, final, sample variants; one screen-reader label), `MatchupHero`, `TagChip` / `TagRow` with explanation sheet, `PlanningWindowNotice`, `SampleDataBadge`, `FreshnessLine` (tap for the exact time), `TravelHint`, `TeamPicker` (division groups, search, single or multi), `ZipField` ("Use my location" asks permission only on tap), `PreferenceSelector`, `CardGrid` (1/2/3 columns at 600/1024 px), `Skeleton` (after 300 ms, no shimmer), `EmptyState`, `ErrorState` (request ID behind Details), `OfflineBanner`, `InfoSheet`; `Screen` gained wide, hero-band and pull-to-refresh options.
-- Screens: `OnboardingScreen` (six steps + review with Edit; SM1 events), `HomeScreen` (next game per favorite team, max 5; not-released and no-more-games states), `ScheduleScreen` (week chips scrolled to the current week, team filter sheet, My teams, day groups, bye-week state with "Next game"), `GameDetailScreen`, `SettingsScreen` (each preference in a dialog with the FR-P4 note, level and categories, time zone, sign out, delete with `DELETE`), `InboxScreen`, `ComingSoonScreen`.
-- Navigation (`navigation.tsx`, both apps): bottom tabs Home, Schedule, Plan, My Game Days; left rail on web at ≥ 1024 px; `(app)` routes guarded by `me.onboarded`; routes for onboarding, games, settings and inbox.
+- Screens: `OnboardingScreen` (six steps + review with Edit; SM1 events), `HomeScreen` (next game per favorite team, max 5; not-released and no-more-games states), `ScheduleScreen` (`WeekChips` scrolled to the current week, with ‹ › page buttons and sideways mouse-wheel scrolling on web, team filter sheet, My teams, day groups, bye-week state with "Next game"), `GameDetailScreen`, `SettingsScreen` (each preference in a dialog with the FR-P4 note, level and categories, time zone, sign out, delete with `DELETE`), `InboxScreen`, `ComingSoonScreen`.
+- Navigation (`navigation.tsx`, both apps): bottom tabs Home, Schedule, Plan, My Game Days on every page after onboarding (game detail, Settings and Inbox live in `(tabs)` with no tab button; Back follows history); on web at ≥ 1024 px a collapsible side column (`SideNav`, in the `(app)` layout so it shows on every page after onboarding) replaces the bottom tabs; `(app)` routes guarded by `me.onboarded`; routes for onboarding, games, settings and inbox.
 
 **E2E**
 - Playwright (`apps/web/e2e/onboard-browse.spec.ts`, phone and desktop viewports): sign in → onboarding → Home → Schedule → game detail → delete account in Settings; fails on React errors.
 - Maestro (`apps/mobile/.maestro/onboard-browse.yaml`): sign in → onboarding → Home → Schedule → game detail in Expo Go. Written, not run yet (no Maestro or simulator here).
 
 **CI** (`.github/workflows/ci.yml`): `PROVIDER_APISPORTS_ENABLED=false` for the backend job and the API client step (no keys in CI).
+
+## Independent review
+
+One round, by a separate agent on a different model. Fixed, each with a test:
+- The Super Bowl, listed as `Pro Bowl`, was dropped, so the season never rolled over; it now maps to week 22.
+- With no Super Bowl listed, the season ended at the last known game; it now ends `SEASON_END_FALLBACK_DAYS` later.
+- Lone 8:00 PM EDT games at `00:00` UTC were shown as TBD; TBD now needs two or more `00:00` games on a date.
+- `venues_ref` allowed duplicate rows with a null state; its unique key is now `NULLS NOT DISTINCT`.
+- `GET /games` accepted `from`/`to` without a time zone; they now return `422 naive_datetime`.
+- Account deletion could refill the cache from in-flight queries; queries are cancelled and the cache cleared before `DELETE /me`.
+- The schedule fetched only the first page; bye-week and playoff copy corrected.
+- Home showed games that had kicked off; pull to refresh now waits for the games query.
+- "Use my location" outside the US showed the permission message; it now says no US ZIP was found nearby.
+
+Skipped: the Auth Admin API header (checked against the local stack). Flagged for later: a per-IP limit on invalid tokens (M6), and a backend record of deleted users.
 
 ## Deferred
 
@@ -131,11 +148,11 @@ pnpm --filter @gamedaygo/mobile dev     # Expo Go
 ## Automated checks
 
 ```bash
-pnpm turbo run lint typecheck test       # shared (20), api-client (8), ui (78), web and mobile routing (6 each)
+pnpm turbo run lint typecheck test       # shared (20), api-client (8), ui (79), web and mobile routing (6 each)
 pnpm format:check
 cd backend
 uv run ruff format --check . && uv run ruff check . && uv run mypy app migrations tests
-uv run pytest                            # 164: domain, contract, HTTP layer, integration (own *_test database)
+uv run pytest                            # 171: domain, contract, HTTP layer, integration (own *_test database)
 uv run pytest -m supabase                # Data API exposure, incl. the 15 new tables
 cd .. && pnpm --filter @gamedaygo/web e2e    # Playwright, phone + desktop; needs stack, API and web app
 maestro test apps/mobile/.maestro/onboard-browse.yaml -e EXPO_URL=exp://<LAN IP>:8082 -e EMAIL=… -e PASSWORD=…
@@ -157,11 +174,11 @@ Use a new account (M0 W2–W6) so onboarding starts fresh.
 | W6 | Steps 3–6 | Defaults selected: Medium, Medium, Flexible, Medium; the helper line follows the selection. Step 4: **Set a max ticket price**, enter 90 |
 | W7 | Review: **Edit** travel → Low → **Done** → **Start planning** | Review shows Low; Home opens. Q2: the row with `timezone` = your browser's zone and `max_ticket_price_cents` 9000; Q3: Bears, Lions; Q4: four categories on; Q7: `onboarding_completed` |
 | W8 | Home | "YOUR NEXT GAMES": one card per team, kickoff like `SUN, NOV 8 · 7:20 PM CT`, venue and city, up to two tags + overflow, "N mi away", and "PLAN THIS GAME · Planning arrives soon" within 30 days or "Planning opens on …" beyond |
-| W9 | Make the window ≥ 1024 px wide, then narrow | Left rail ↔ bottom tabs; cards 3 / 2 / 1 per row |
-| W10 | **Schedule** | Current week chip selected (selected chip has dark text on orange); games under day headers like `SUNDAY, NOV 8`; tag dots |
+| W9 | Make the window ≥ 1024 px wide, then narrow | Wide: side navigation open on Home, Schedule, game detail and Settings; its orange edge tab slides it shut (page and photo widen to the full window) and back, and it stays as set between pages. Narrow: bottom tabs. Cards 3 / 2 / 1 per row |
+| W10 | **Schedule**; then press **‹** until it greys out, and scroll the mouse wheel over the week row | Current week chip selected (selected chip has dark text on orange); games under day headers like `SUNDAY, NOV 8`; tag dots. ‹ pages back to WK 1 and then greys out; the wheel scrolls the row sideways |
 | W11 | **All teams** → Bears; pick a week without Bears games | "The Bears have a bye in Week N." → **Next game ›** opens the Bears' next game |
 | W12 | Clear the team; **My teams** on | Only Bears and Lions games |
-| W13 | Open a primetime division game (Q5 lists tags by week) | Black field-line hero: `WEEK N · SUNDAY NIGHT`, matchup, kickoff with zone, venue · city · distance, tag chips |
+| W13 | Open a primetime division game (Q5 lists tags by week) | Hero over the stadium photo: `WEEK N · SUNDAY NIGHT`, matchup, kickoff with zone, venue · city · distance, tag chips |
 | W14 | Tap a tag | Sheet with a one-sentence explanation; featured rivalries show their reason |
 | W15 | Open a game more than 30 days out (Week 18) | "Planning opens on <date>." in place of the plan button; the kickoff shows `TIME TBD` if not set (AC-47) |
 | W16 | **About this game** | Week and stage, venue, each tag explained, `API-Sports · schedule updated N min ago`; tap it for the exact time with zone (FR-SC4). Matches Q6 `ended_at` |
@@ -180,7 +197,7 @@ Use a new account (M0 W2–W6) so onboarding starts fresh.
 | P2 | Step 2 **Use my location**, allow | The permission prompt appears only now; the nearest ZIP and city fill in. After saving, Q2 has only the ZIP |
 | P3 | Finish onboarding | Home; bottom tabs Home, Schedule, Plan, My Game Days; bell and gear top right |
 | P4 | Plan, My Game Days, bell | Empty states ("Planning arrives soon", "Your saved plans and alerts will show here", "No alerts yet") |
-| P5 | Schedule → swipe the week chips, open a game, Back | Same content as web; back to the same week |
+| P5 | Schedule → swipe the week chips, open a game, Back; open Settings | Same content as web; bottom tabs stay visible on game detail and Settings; Back returns to the same week |
 | P6 | Switch the phone between light and dark mode | No change (NFR-5); kickoffs show the zone |
 | P7 | System text size to the maximum | Cards grow; no clipped text |
 | P8 | Airplane mode, pull to refresh | Cached games with the offline banner |
@@ -286,10 +303,10 @@ APPSQL "select name, city, state, country, source from app.venues_ref where lat 
 ## Exit checklist
 
 - [x] T4 resolved: Pro plan, contract fixtures recorded, TDD markers updated
-- [x] Automated checks pass locally: TypeScript (lint, typecheck, 118 tests), format, backend (ruff, mypy, 164 tests), `pytest -m supabase` (9), web export build, mobile config check
+- [x] Automated checks pass locally: TypeScript (lint, typecheck, 119 tests), format, backend (ruff, mypy, 171 tests), `pytest -m supabase` (9), web export build, mobile config check
 - [x] Migration round trip (up, down, up) and `alembic check` clean
 - [x] `pnpm api:generate` run; client committed-ready
-- [x] Live seed and sync: 32 teams, 278 games (272 regular season + 6 playoff slots), tags as expected (Q1, Q5, Q6)
+- [x] Live seed and sync: 32 teams, 279 games (272 regular season + 7 playoff slots, Super Bowl included), tags as expected (Q1, Q5, Q6)
 - [x] API checks A1–A10 against the local stack, including live account deletion (Q9)
 - [x] Playwright onboard → browse → delete flow passes (phone and desktop viewports)
 - [ ] Manual web tests W1–W22

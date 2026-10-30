@@ -6,8 +6,6 @@ export interface ColorTokens {
   primary: string;
   onPrimary: string;
   primaryText: string;
-  /** Hero bands and the auth screens' header (template: black under a field-line pattern). */
-  hero: string;
   background: string;
   surface: string;
   surfaceRaised: string;
@@ -17,8 +15,6 @@ export interface ColorTokens {
   outline: string;
   /** Form-field borders: at least 3:1 against every surface (WCAG 1.4.11). */
   outlineStrong: string;
-  /** Lines of the field pattern, drawn at `fieldLineOpacity`. */
-  fieldLine: string;
   text: string;
   textMuted: string;
   /** De-emphasized captions: sources, timestamps, "@" in matchups. */
@@ -33,20 +29,22 @@ export interface ColorTokens {
   scrim: string;
   /** Panels over the background photo: text on them never depends on what's behind. */
   panelGlass: string;
+  /** Side and bottom navigation over the photo: see-through, blurred on web. */
+  navGlass: string;
+  /** Behind the active navigation item. */
+  navActive: string;
 }
 
 export const colors: ColorTokens = {
   primary: "#F0502A",
   onPrimary: "#111111",
   primaryText: "#FF7A57",
-  hero: "#000000",
   background: "#111111",
   surface: "#1A1A1A",
   surfaceRaised: "#262626",
   chrome: "#0B0B0B",
   outline: "#333333",
   outlineStrong: "#767676",
-  fieldLine: "#FFFFFF",
   text: "#FFFFFF",
   textMuted: "#B9C1CC",
   textSubtle: "#8E96A3",
@@ -58,13 +56,9 @@ export const colors: ColorTokens = {
   overlay: "rgba(0,0,0,0.6)",
   scrim: "rgba(0,0,0,0.35)",
   panelGlass: "rgba(17,17,17,0.9)",
+  navGlass: "rgba(11,11,11,0.72)",
+  navActive: "rgba(240,80,42,0.18)",
 };
-
-/** The field-line pattern (UI/UX §4): yard lines every 40 px, at 16% opacity. */
-export const fieldPattern = {
-  lineOpacity: 0.16,
-  yardSpacing: 40,
-} as const;
 
 export const fontFamily = {
   display: "Oswald_700Bold",

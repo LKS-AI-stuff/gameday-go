@@ -9,18 +9,18 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTabBarSpace } from "../navigation";
 import { layout, spacing } from "../theme/tokens";
 import { AppBackground } from "./AppBackground";
 import { Hero } from "./Hero";
 
 interface ScreenProps {
   children: ReactNode;
-  /** Narrow centered column for forms, the reading width, or wide for card grids. */
+  /** Signed-in pages are `wide` (the default), so every page shares one width and left edge;
+   * `reading` is the narrower onboarding column and `form` the auth forms. */
   variant?: "form" | "reading" | "wide";
   /** Optional hero at the top, in the photo's dark upper area and under the status bar. */
   hero?: ReactNode;
-  /** Draw the hero as the black band with field lines (game detail) instead of over the photo. */
-  heroBand?: boolean;
   /** Pull-to-refresh (UI/UX §5.6). */
   refreshControl?: ReactElement<RefreshControlProps>;
 }
@@ -29,13 +29,9 @@ interface ScreenProps {
  * Every screen: the fixed stadium background, then safe-area, keyboard-aware scrolling content
  * with a max width. Body content goes on `Panel`s so it stays readable over the photo.
  */
-export function Screen({
-  children,
-  variant = "reading",
-  hero,
-  heroBand = false,
-  refreshControl,
-}: ScreenProps) {
+export function Screen({ children, variant = "wide", hero, refreshControl }: ScreenProps) {
+  // Keep the last content clear of a floating bottom tab bar (it covers the safe area too).
+  const tabBarSpace = useTabBarSpace();
   const maxWidth =
     variant === "form"
       ? layout.formWidth
@@ -55,15 +51,17 @@ export function Screen({
             refreshControl={refreshControl}
           >
             {hero ? (
-              <Hero
-                underStatusBar
-                variant={variant === "form" ? "form" : "reading"}
-                overPhoto={!heroBand}
-              >
+              <Hero underStatusBar variant={variant}>
                 {hero}
               </Hero>
             ) : null}
-            <SafeAreaView edges={["bottom"]} style={styles.body}>
+            <SafeAreaView
+              edges={tabBarSpace ? [] : ["bottom"]}
+              style={[
+                styles.body,
+                tabBarSpace ? { paddingBottom: tabBarSpace + spacing.lg } : null,
+              ]}
+            >
               <View style={[styles.column, { maxWidth }]}>{children}</View>
             </SafeAreaView>
           </ScrollView>

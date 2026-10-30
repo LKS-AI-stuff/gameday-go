@@ -13,7 +13,7 @@ export function contrast(a: string, b: string): number {
 }
 
 type Key = keyof ColorTokens;
-const SURFACES: Key[] = ["hero", "background", "surface", "surfaceRaised", "chrome"];
+const SURFACES: Key[] = ["background", "surface", "surfaceRaised", "chrome"];
 // Tokens used for small text on any surface must reach 4.5:1.
 const TEXT_ON_SURFACES: Key[] = [
   "text",

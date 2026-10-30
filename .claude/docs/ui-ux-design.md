@@ -51,9 +51,9 @@ Main app
 
 | | Mobile (iOS/Android) | Web, < 1024 px | Web, ≥ 1024 px |
 |---|---|---|---|
-| Primary nav | Bottom tabs: **Home, Schedule, Plan, My Game Days** | Same bottom tabs | Left navigation rail with the same four items |
-| Inbox | Bell icon with badge, top-right of the app bar | Same | Rail item with badge |
-| Settings | Avatar/gear icon, top-right | Same | Rail item (bottom) |
+| Primary nav | Bottom tabs: **Home, Schedule, Plan, My Game Days**, shown on every page after onboarding (game detail, Settings and Inbox included) | Same bottom tabs | The same four items in a left side column beside every signed-in page after onboarding, including game detail, Settings and Inbox. Open when the app loads; an orange tab on its edge slides it shut, and the page and background photo widen to the full window, and back open; it stays as set while moving between pages |
+| Inbox | Bell icon with badge, top-right of the app bar | Same | Same |
+| Settings | Avatar/gear icon, top-right | Same | Same |
 | Game detail | Pushed screen with back button | Same | Opens in the main column; "Plan this game" can open the agent in a right-side panel |
 | Agent session | Full screen | Full screen | Two columns: chat (left), trace or Plan Card detail (right) |
 
@@ -72,10 +72,10 @@ Tab labels use `type.label` (Oswald, uppercase). The active tab uses `color.prim
 |---|---|---|---|---|
 | Phone | < 600 px | 1 | 16 px | Default design target |
 | Tablet / small web | 600–1023 px | 1–2 | 24 px | Game cards in a 2-column grid |
-| Desktop web | ≥ 1024 px | Rail + content (max 1200 px) | 32 px | Game cards 3 across (like the template's match row); game detail in 2 columns |
+| Desktop web | ≥ 1024 px | Collapsible side navigation + content (max 1200 px) | 32 px | Game cards 3 across (like the template's match row); game detail in 2 columns |
 
 - Minimum touch target 44 × 44 pt (iOS) / 48 × 48 dp (Android and web).
-- Content never runs edge to edge on desktop: max reading width 720 px for chat and text.
+- Content never runs edge to edge on desktop. Every signed-in page uses the same column (max 1200 px, same left edge), so switching pages doesn't shift the layout; onboarding uses a centered 720 px column and the auth forms a narrower one.
 - Safe areas respected on mobile; the chat composer sits above the keyboard.
 
 ## 4. Visual Language (summary)
@@ -89,7 +89,7 @@ Full token tables are in Technical Design §4.4. In practice:
 - **Typography:** Oswald uppercase for screen titles, section titles, labels and scores; Open Sans for everything people read in sentences.
 - **Shape:** near-square corners (Paper roundness 2), thin `color.outline` dividers, minimal shadows.
 - **Background photo:** every screen sits on a fixed night-stadium photo (floodlights, turf, a football; no logos or people) under a 35% black scrim (`color.scrim`). It comes in two crops of the same scene: tall (`stadium-night.jpg`) when the window is taller than it is wide (phones, narrow browser windows), and wide (`stadium-night-wide.jpg`) otherwise (desktop web, tablets in landscape), switching live as the window is resized, so the whole scene is visible either way. Its upper half is dark enough for text; the lower half is not, so body content (forms, cards, actions, captions) always sits on panels (`color.panelGlass`, 90% opaque), and only hero text and section titles near the top sit directly on the photo. In the wide crop the centered content column stays dark down to the yard line near the bottom.
-- **Imagery:** no other photos and no team logos in the MVP (A12). Over the photo, the auth screens' hero is transparent. Elsewhere, hero bands (game detail) are black with the template's football-field pattern drawn in code: yard lines every 40 px, two sidelines at 15% from each edge, and a row of hash marks, all in white at 16% opacity, decorative and hidden from screen readers. Team identity comes from text (abbreviation + name).
+- **Imagery:** no other photos and no team logos in the MVP (A12). Heroes (the auth screens' header and the game-detail matchup) sit directly on the photo's dark upper area, with no band behind them. The navigation is dark glass over the same photo: the bottom tab bar floats over it, and on wide web the photo runs behind both the side navigation and the page. The active item is orange on an orange-tinted background. Team identity comes from text (abbreviation + name).
 - **Wordmark:** "GAMEDAY GO" in Oswald Bold, with "GO" in `color.primary` (UX1): display size in heroes, 24 px in the app bar.
 - **Iconography:** MaterialCommunityIcons (Paper's default set), outlined style, 24 px.
 
@@ -223,7 +223,7 @@ Template hero, without photography.
 │  [DIVISION RIVALRY] [PRIMETIME]          │
 │  Records as of Tue 6:00 AM               │  ← freshness line
 └──────────────────────────────────────────┘
-   dark gradient + field-line pattern, color.overlay
+   over the background photo's dark upper area
 ```
 
 When the game is live or final, a `ScoreStrip` sits directly under the hero.
@@ -378,7 +378,7 @@ Each screen lists its purpose, layout, actions and states.
 
 ### 7.2 Onboarding (FR-P1, AC-1, SM1 < 90 s)
 
-Six steps, one question each, progress bar at top, "Back" and "Next". Defaults pre-selected where the BRD allows, so most steps are one tap.
+Six steps, one question each, progress bar at top, "Back" and "Next". Defaults pre-selected where the BRD allows, so most steps are one tap. A "Sign out" text button sits next to the wordmark on every step (there is no app bar yet); nothing is saved until "Start planning". The screen shown when the profile can't load also offers "Sign out" beside "Try again".
 
 ```text
 ┌──────────────────────────────┐
@@ -465,6 +465,7 @@ Six steps, one question each, progress bar at top, "Back" and "Next". Defaults p
 └──────────────────────────────┘
 ```
 
+- Week chips: phones swipe the row. On web, the ‹ › buttons scroll it a screenful at a time (disabled at either end), and the mouse wheel scrolls it sideways while the pointer is over it.
 - Compact GameCard: single-line matchup, time, tags as dots; tap for detail.
 - Playoff weeks labeled "WILD CARD", "DIVISIONAL", "CONF. CHAMPIONSHIPS", "SUPER BOWL".
 
@@ -777,7 +778,7 @@ All decided.
 | ID | Question | Decision |
 |---|---|---|
 | UX1 | Wordmark / app icon | Decided: text wordmark "GAMEDAY GO" in Oswald (built in M0); icon: orange-red square with a "GG" monogram |
-| UX2 | Imagery | Decided: the night-stadium background photo behind every screen, provided by the product owner; game-detail heroes keep the black band with drawn field lines |
+| UX2 | Imagery | Decided: the night-stadium background photo behind every screen, provided by the product owner; game-detail heroes sit on it too |
 | UX3 | Theme | Decided: one dark theme on every platform, regardless of the device setting (NFR-5); no light theme or theme setting |
 | UX4 | Team color accents | Decided: none (A12: neutral styling); team identity by text only |
 | UX5 | Empty-state illustrations | Decided: icons only in MVP |

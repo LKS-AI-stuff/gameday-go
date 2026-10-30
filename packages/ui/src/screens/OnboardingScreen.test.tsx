@@ -108,6 +108,15 @@ describe("OnboardingScreen (FR-P1, AC-1)", () => {
     expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
 
+  it("lets the user sign out on any step without saving", async () => {
+    const { auth, calls } = await renderWithApi(<OnboardingScreen />, routes());
+    await fireEvent.press(await screen.findByLabelText("Chicago Bears"));
+    await next();
+    await fireEvent.press(screen.getByText("Sign out"));
+    await waitFor(() => expect(auth.signOut).toHaveBeenCalled());
+    expect(calls.some((c) => c.method === "PUT")).toBe(false);
+  });
+
   it("explains a denied location permission", async () => {
     await renderWithApi(<OnboardingScreen />, routes());
     await fireEvent.press(await screen.findByLabelText("Chicago Bears"));

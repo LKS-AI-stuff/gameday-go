@@ -1,6 +1,6 @@
 import { useAllGames, useGames, useSeason, useTeams } from "@gamedaygo/api-client";
 import { COPY, formatDayHeader, gameDayKey } from "@gamedaygo/shared";
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Chip, Modal, Portal } from "react-native-paper";
 
@@ -17,10 +17,10 @@ import {
   Skeleton,
 } from "../components/StateViews";
 import { TeamPicker } from "../components/TeamPicker";
+import { WeekChips } from "../components/WeekChips";
 import { useViewer } from "../hooks/useViewer";
 import { colors, spacing, type } from "../theme/tokens";
 
-const CHIP_STEP = 96;
 const REGULAR_SEASON_WEEKS = 18;
 
 interface ScheduleScreenProps extends AppBarActions {
@@ -36,7 +36,6 @@ export function ScheduleScreen({ onOpenGame, ...appBar }: ScheduleScreenProps) {
   const [team, setTeam] = useState<string | null>(null);
   const [mine, setMine] = useState(false);
   const [picking, setPicking] = useState(false);
-  const chips = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const selectedWeek = week ?? season.data?.current_week ?? null;
   const available = season.data?.schedule_available === true && selectedWeek !== null;
@@ -55,9 +54,6 @@ export function ScheduleScreen({ onOpenGame, ...appBar }: ScheduleScreenProps) {
 
   const weeks = season.data?.weeks ?? [];
   const weekIndex = weeks.findIndex((w) => w.week === selectedWeek);
-  useEffect(() => {
-    if (weekIndex > 0) chips.current?.scrollTo({ x: (weekIndex - 1) * CHIP_STEP, animated: false });
-  }, [weekIndex]);
 
   const days = useMemo(() => {
     const items = games.data?.pages.flatMap((p) => p.items) ?? [];
@@ -139,7 +135,6 @@ export function ScheduleScreen({ onOpenGame, ...appBar }: ScheduleScreenProps) {
 
   return (
     <Screen
-      variant="wide"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -152,28 +147,7 @@ export function ScheduleScreen({ onOpenGame, ...appBar }: ScheduleScreenProps) {
       <OfflineBanner visible={isOffline(games) || isOffline(season)} />
       <SectionTitle>SCHEDULE</SectionTitle>
       {weeks.length > 0 ? (
-        <ScrollView
-          ref={chips}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}
-          accessibilityLabel="Weeks"
-        >
-          {weeks.map((w) => (
-            <Chip
-              key={w.week}
-              selected={w.week === selectedWeek}
-              showSelectedOverlay
-              onPress={() => setWeek(w.week)}
-              style={[styles.chip, w.week === selectedWeek && styles.chipOn]}
-              // Text on the orange fill is dark (UI/UX §4: never white on primary).
-              textStyle={[type.label, w.week === selectedWeek && { color: colors.onPrimary }]}
-              accessibilityLabel={titleCase(w.label)}
-            >
-              {w.label.replace("WEEK ", "WK ")}
-            </Chip>
-          ))}
-        </ScrollView>
+        <WeekChips weeks={weeks} selected={selectedWeek} onSelect={setWeek} chipLabel={titleCase} />
       ) : null}
       <View style={styles.filters}>
         <Chip
@@ -231,9 +205,6 @@ function titleCase(label: string): string {
 }
 
 const styles = StyleSheet.create({
-  chips: { gap: spacing.sm, paddingVertical: spacing.xs },
-  chip: { minWidth: 80, backgroundColor: colors.surface },
-  chipOn: { backgroundColor: colors.primary },
   filters: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   day: { gap: spacing.sm },
   dayHeader: { color: colors.text },

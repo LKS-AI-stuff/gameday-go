@@ -6,3 +6,5 @@ packages/api-client/src/schema.d.ts
 packages/api-client/openapi.json
 **/.expo/
 **/dist/
+**/test-results/
+**/playwright-report/

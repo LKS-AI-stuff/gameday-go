@@ -1,8 +1,8 @@
+export { AppBackground } from "./components/AppBackground";
 export { AppProviders } from "./AppProviders";
 export { AuthProvider, useAuth, type AuthResult, type AuthStatus } from "./auth/AuthProvider";
 export { AppBar } from "./components/AppBar";
 export { HeroTitle, NotAffiliatedNote, Wordmark } from "./components/Brand";
-export { FieldLines } from "./components/FieldLines";
 export { GameCard } from "./components/GameCard";
 export { Hero } from "./components/Hero";
 export { Panel, SectionTitle } from "./components/Panel";
@@ -22,4 +22,13 @@ export { VerifyEmailScreen } from "./screens/VerifyEmailScreen";
 export { useAppFonts } from "./theme/fonts";
 export { paperTheme } from "./theme/paperTheme";
 export * from "./theme/tokens";
-export { TABS, tabIcon, tabScreenOptions } from "./navigation";
+export { SideNav } from "./components/SideNav";
+export {
+  PAGES_WITHOUT_TAB,
+  pageWithoutTabOptions,
+  TAB_BAR_HEIGHT,
+  TabBarSpaceProvider,
+  TABS,
+  tabIcon,
+  tabScreenOptions,
+} from "./navigation";

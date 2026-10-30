@@ -1,4 +1,5 @@
 import { act, screen } from "@testing-library/react-native";
+import { router as appRouter } from "expo-router";
 import { renderRouter, type RenderRouterResult } from "expo-router/testing-library";
 
 // Renders the real app/ routes to check where each user lands.
@@ -111,4 +112,12 @@ it("keeps signed-out users away from home", async () => {
 it("keeps signed-in users away from sign-in", async () => {
   const router = await renderAt("/sign-in", true);
   expect(router.getPathname()).not.toBe("/sign-in");
+});
+
+it("opens game detail and Settings inside the tabs, with the tab bar still shown (UI/UX §2.2)", async () => {
+  const router = await renderAt("/games/g1", true);
+  expect(router.getPathname()).toBe("/games/g1");
+  expect(await screen.findByText("Schedule")).toBeTruthy();
+  await act(async () => appRouter.push("/settings"));
+  expect(router.getPathname()).toBe("/settings");
 });

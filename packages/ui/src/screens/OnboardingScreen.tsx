@@ -48,7 +48,7 @@ function label<T extends string>(options: { value: T; label: string }[], value: 
 /** Six questions, one per step, then a review (UI/UX §7.2, FR-P1, AC-1). The time zone is
  * taken from the device, not asked (BRD §7.1). */
 export function OnboardingScreen() {
-  const { userId } = useAuth();
+  const { userId, signOut } = useAuth();
   const teams = useTeams(userId);
   const save = useSavePreferences(userId);
   const sendEvents = useAppEvents();
@@ -123,13 +123,23 @@ export function OnboardingScreen() {
 
   return (
     <Screen variant="reading">
-      <Wordmark size="compact" />
+      <View style={styles.header}>
+        <Wordmark size="compact" />
+        {/* Onboarding has no app bar, so sign-out lives here; nothing is saved until the end. */}
+        <Button mode="text" compact onPress={() => void signOut()}>
+          Sign out
+        </Button>
+      </View>
       <View style={styles.progress}>
-        <ProgressBar
-          progress={Math.min(step + 1, STEPS.length) / STEPS.length}
-          color={colors.primary}
-          accessibilityLabel="Onboarding progress"
-        />
+        {/* On web, Paper sizes the bar to 100% of its parent's height; a fixed-height parent
+            keeps the step label below from being drawn under the panel. */}
+        <View style={styles.bar}>
+          <ProgressBar
+            progress={Math.min(step + 1, STEPS.length) / STEPS.length}
+            color={colors.primary}
+            accessibilityLabel="Onboarding progress"
+          />
+        </View>
         <Text style={[type.caption, { color: colors.textMuted }]}>
           {step < REVIEW ? `Step ${step + 1} of ${STEPS.length}` : "Review"}
         </Text>
@@ -261,7 +271,9 @@ export function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   progress: { gap: spacing.xs },
+  bar: { height: 4 },
   panel: { padding: spacing.xl, gap: spacing.lg },
   stack: { gap: spacing.md },
   checkbox: { paddingHorizontal: 0 },

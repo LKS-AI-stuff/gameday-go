@@ -47,8 +47,17 @@ test("onboard, see your next games, browse the schedule and open a game", async 
     await expect(card).toContainText(/ (CT|ET|PT|MT|MST|AKT|HT|HST|GMT[+-]?\d*|UTC)/);
 
     // Schedule: week chips and day groups (FR-SC2), then a game's detail (FR-SC3, FR-SC4).
-    await page.getByRole("tab", { name: /Schedule/i }).click();
+    // Bottom tabs on the phone viewport; the side navigation on desktop (UI/UX §2.2).
+    const nav = testInfo.project.name === "desktop" ? "link" : "tab";
+    await page.getByRole(nav, { name: /Schedule/i }).click();
     await expect(page.getByText("SCHEDULE", { exact: true })).toBeVisible();
+    // Web can't swipe the week row: the arrows page through it (UI/UX §7.4).
+    const earlier = page.getByRole("button", { name: "Earlier weeks" });
+    for (let i = 0; i < 5 && (await earlier.isEnabled()); i++) {
+      await earlier.click();
+      await page.waitForTimeout(500); // let the scroll animation settle
+    }
+    await expect(page.getByRole("button", { name: "Week 1", exact: true })).toBeInViewport();
     await page.getByRole("button", { name: / at / }).first().click();
     await expect(page.getByText("ABOUT THIS GAME")).toBeVisible();
     await expect(page.getByText(/API-Sports · schedule updated/)).toBeVisible();
@@ -56,8 +65,8 @@ test("onboard, see your next games, browse the schedule and open a game", async 
     // Settings: delete the account, which needs DELETE typed (UI/UX §5.4).
     await page.getByLabel("Back").filter({ visible: true }).click();
     await expect(page.getByText("SCHEDULE", { exact: true })).toBeVisible();
-    // Inactive tabs stay mounted with their own app bar, so open Settings by URL.
-    await page.goto("/settings");
+    // Inactive tabs stay mounted with their own app bar; use the one on screen.
+    await page.getByRole("button", { name: "Settings" }).filter({ visible: true }).click();
     await page.getByRole("button", { name: "Delete account" }).click();
     await page.getByLabel("Type DELETE to confirm").fill("DELETE");
     await page.getByRole("button", { name: "Delete account" }).last().click();

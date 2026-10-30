@@ -16,7 +16,7 @@ function nightLabel(kickoffAt: string): string {
   return `${weekday} night`.toUpperCase();
 }
 
-/** Game detail header on the black field-line band (UI/UX §6.2). Records arrive in M4. */
+/** Game detail header, over the background photo (UI/UX §6.2). Records arrive in M4. */
 export function MatchupHero({
   game,
   timeZone,

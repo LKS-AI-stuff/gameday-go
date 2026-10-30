@@ -38,7 +38,7 @@ This milestone is implemented. The sections below describe what was built, how t
 - New tables must call `secure_table()` (`backend/migrations/hardening.py`).
 
 **Apps and shared packages**
-- `packages/ui`: design tokens (TDD §4.4) with automated WCAG AA contrast checks, one dark theme on every platform (NFR-5) applied to React Native Paper, the night-stadium background photo behind every screen (`AppBackground`) with forms and cards on glass panels, the template's black hero band with the field-line pattern for later screens (`Hero`, `FieldLines`), the two-tone "GAMEDAY GO" wordmark, mockup-style cards (`Panel`), Oswald/Open Sans bundled fonts, auth state (`AuthProvider`), sign-in, sign-up (18+ checkbox), verify-email (60 s resend cooldown) and a signed-in placeholder Home.
+- `packages/ui`: design tokens (TDD §4.4) with automated WCAG AA contrast checks, one dark theme on every platform (NFR-5) applied to React Native Paper, the night-stadium background photo behind every screen (`AppBackground`) with forms and cards on glass panels, a hero header over the photo (`Hero`), the two-tone "GAMEDAY GO" wordmark, mockup-style cards (`Panel`), Oswald/Open Sans bundled fonts, auth state (`AuthProvider`), sign-in, sign-up (18+ checkbox), verify-email (60 s resend cooldown) and a signed-in placeholder Home.
 - `packages/shared`: sign-in and sign-up form schemas (Zod) and product copy.
 - `packages/api-client`: types generated from the backend OpenAPI schema, a typed fetch client that maps problem responses to `ApiError`, and TanStack Query hooks keyed by user ID.
 - Routing: `/` sends signed-out users to `/sign-in` and signed-in users to `/home`; auth and app route groups are guarded by session state.

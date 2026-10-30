@@ -113,7 +113,6 @@ export function HomeScreen({ onOpenGame, onBrowseSchedule, ...appBar }: HomeScre
 
   return (
     <Screen
-      variant="wide"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

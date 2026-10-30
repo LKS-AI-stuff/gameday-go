@@ -71,7 +71,7 @@ export async function renderWithApi(ui: ReactElement, routes: Record<string, Han
     getAccessToken: async () => "tok",
     fetch: fetchMock as unknown as typeof fetch,
   });
-  const { client } = fakeSupabase({
+  const { client, auth } = fakeSupabase({
     getSession: jest.fn().mockResolvedValue({ data: { session: TEST_SESSION } }),
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -91,7 +91,7 @@ export async function renderWithApi(ui: ReactElement, routes: Record<string, Han
       </QueryClientProvider>
     </SafeAreaProvider>,
   );
-  return { view, calls, queryClient };
+  return { view, calls, queryClient, auth };
 }
 
 export const TEST_TEAMS = [

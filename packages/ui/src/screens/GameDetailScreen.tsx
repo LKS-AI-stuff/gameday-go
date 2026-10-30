@@ -112,7 +112,6 @@ export function GameDetailScreen({ gameId, onBack }: GameDetailScreenProps) {
 
   return (
     <Screen
-      heroBand
       hero={<MatchupHero game={g} timeZone={timeZone} onBack={onBack} />}
       refreshControl={
         <RefreshControl

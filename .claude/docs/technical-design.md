@@ -177,7 +177,7 @@ The folders under `packages/` are **internal pnpm workspace packages**. They are
 | `/inbox` | Notification inbox | FR-N1 |
 | `/settings` | Preferences, notification level, email categories, account deletion | FR-P2, BR-N9, FR-A4 |
 
-Web gets a wider layout with a side navigation rail. Mobile uses bottom tabs (NFR-2).
+Web gets a wider layout with a collapsible side navigation column (`SideNav`) beside every signed-in page. Mobile uses bottom tabs (NFR-2).
 
 ### 4.3 Key client behaviors
 
@@ -200,14 +200,12 @@ The reference in `.claude/docs/Template/` is a Nicepage preview of a "Modern Foo
 | `color.primary` | `#F0502A` | Template accent (palette 2). Buttons, active tab, key highlights |
 | `color.onPrimary` | `#111111` | Text and icons on primary fills (passes AA at all sizes; white, about 3.3:1, is not used) |
 | `color.primaryText` | `#FF7A57` | Primary-colored small text and links |
-| `color.hero` | `#000000` | Hero bands, under the field-line pattern |
 | `color.background` | `#111111` | Template `#111111` sections; every screen |
 | `color.surface` | `#1A1A1A` | Cards and panels (template grey-90 sections) |
 | `color.surfaceRaised` | `#262626` | Sheets and raised elements |
-| `color.chrome` | `#0B0B0B` | Bottom tabs and app chrome |
+| `color.chrome` | `#0B0B0B` | App chrome |
 | `color.outline` | `#333333` | Decorative borders and dividers only (template grey-80) |
 | `color.outlineStrong` | `#767676` | Form-field borders (at least 3:1 on every surface, WCAG 1.4.11) |
-| `color.fieldLine` | `#FFFFFF` at 16% | Field-line pattern (yard lines every 40 px, sidelines, hash marks) |
 | `color.text` / `color.textMuted` / `color.textSubtle` | `#FFFFFF` / `#B9C1CC` / `#8E96A3` | Body, secondary text, captions (sources, timestamps) |
 | `color.info` | `#6690F4` | Template palette 1 (blue), lightened for AA on raised cards: links, info banners |
 | `color.live` | `#F1C50E` | Template palette 3 (yellow): "Live now", warnings; dark text on it |
@@ -216,6 +214,8 @@ The reference in `.claude/docs/Template/` is a Nicepage preview of a "Modern Foo
 | `color.overlay` | `rgba(0,0,0,0.6)` | Sheet and dialog backdrop |
 | `color.scrim` | `rgba(0,0,0,0.35)` | Over the background photo (`AppBackground`) |
 | `color.panelGlass` | `rgba(17,17,17,0.9)` | Panels over the photo; text on them passes AA even with pure white behind |
+| `color.navGlass` | `rgba(11,11,11,0.72)` | Bottom tabs and the web side navigation, floating over the photo (blurred on web) |
+| `color.navActive` | `rgba(240,80,42,0.18)` | Behind the active navigation item, with the item in `color.primary` |
 
 **Typography:** Oswald for display and headings (uppercase, like the template), Open Sans for body and UI text. The template's web sizes (3.75–6 rem headings) are scaled for phones:
 
@@ -232,7 +232,7 @@ The reference in `.claude/docs/Template/` is a Nicepage preview of a "Modern Foo
 
 All text tokens are checked against WCAG AA on every surface (including a glass panel over pure white), and form-field borders against 3:1, by `packages/ui/src/theme/tokens.test.ts`.
 
-**Background photo:** `AppBackground` (core `ImageBackground`, no extra library) renders, fixed behind every `Screen`, `packages/ui/assets/stadium-night.jpg` (852 × 1846, about 140 KB) when the window is taller than wide and `stadium-night-wide.jpg` (1672 × 941, about 160 KB) otherwise, chosen with `useWindowDimensions` so it switches on resize or rotation, with `color.scrim` over it. Text that isn't in the dark top area goes on a `Panel` with `variant="glass"` (UI/UX §4).
+**Background photo:** `AppBackground` (core `ImageBackground`, no extra library) renders, fixed behind every `Screen`, `packages/ui/assets/stadium-night.jpg` (852 × 1846, about 140 KB) when the window is taller than wide and `stadium-night-wide.jpg` (1672 × 941, about 160 KB) otherwise, chosen with `useWindowDimensions` so it switches on resize or rotation, with `color.scrim` over it. On wide web one `AppBackground` sits behind both the side navigation and the page (nested ones draw nothing, and the navigators' theme background is transparent); elsewhere the bottom tab bar floats over the page's photo and `Screen` pads its content by the bar's height. Text that isn't in the dark top area goes on a `Panel` with `variant="glass"` (UI/UX §4).
 
 **Shape and spacing:** the template uses square corners, so Paper `roundness` is set to 2 (near-square cards and buttons). Spacing scale: 4, 8, 12, 16, 24, 32, 48. Cards use 16 px padding on mobile, 24 px on web.
 
@@ -246,7 +246,7 @@ All text tokens are checked against WCAG AA on every surface (including a glass 
 
 | Template element | GameDay Go component | Built with |
 |---|---|---|
-| Hero (full-bleed photo, dark overlay, huge uppercase title) | `Hero` band (black with the `FieldLines` pattern) on game detail as `MatchupHero`, and as the header of the auth screens; matchup in `type.display`, kickoff, venue, tags | Core primitives + tokens |
+| Hero (full-bleed photo, dark overlay, huge uppercase title) | `Hero` header over the photo's dark upper area, on game detail as `MatchupHero` and on the auth screens; matchup in `type.display`, kickoff, venue, tags | Core primitives + tokens |
 | "Upcoming matches" cards (date / Team vs Team / venue / Kickoff time) | `GameCard` in Home and Schedule: date label, matchup with records, venue, kickoff in user time zone, tags, planning status | Paper `Card` + primitives |
 | Orange-red highlighted block | `PlanCard` recommended option, primary call to action | Paper `Card`, `Button` |
 | Standings table (pos, team, W, L, T, PCT, PF, PA…) | `RecordBadge` (W–L–T) and division rank on game detail; no full standings screen (BRD future roadmap) | Paper `Chip` / primitives |
@@ -254,7 +254,7 @@ All text tokens are checked against WCAG AA on every surface (including a glass 
 
 **Paper components used:** `Appbar`, `Card`, `Button`, `IconButton`, `Chip` (tags, filters), `SegmentedButtons` (Low/Medium/High, Less/Medium/More in onboarding), `TextInput`, `List.Item`, `Banner` ("Sample data", "Scores paused"), `Snackbar`, `Dialog` (confirmations, account deletion), `ActivityIndicator`, `ProgressBar`, `Divider`, `Badge` (inbox count). Tab bars use Expo Router tabs styled with the tokens.
 
-**Custom components** (core primitives + tokens): `AppBackground`, `Hero`, `FieldLines`, `Panel`, `GameCard`, `MatchupHero`, `ScoreStrip`, `RecordBadge`, `TagChip`, `PlanCard`, `TraceTimeline`, `ChatComposer` (with turns-remaining hint), `PlanningWindowNotice`, `SampleDataBadge`.
+**Custom components** (core primitives + tokens): `AppBackground`, `Hero`, `Panel`, `GameCard`, `MatchupHero`, `ScoreStrip`, `RecordBadge`, `TagChip`, `PlanCard`, `TraceTimeline`, `ChatComposer` (with turns-remaining hint), `PlanningWindowNotice`, `SampleDataBadge`.
 
 Screen-by-screen layouts, component specs and all loading, empty and error states are in `.claude/docs/ui-ux-design.md`.
 
@@ -455,7 +455,7 @@ Every outbound call goes through `ProviderClient.request(provider, ...)`, which 
 | Endpoints | Season games (`/games?league=1&season=<YYYY>`: one call, all games, no pagination), teams (`/teams?league=1&season=<YYYY>`), standings (`/standings?league=1&season=<YYYY>`), games by date (`/games?league=1&date=<YYYY-MM-DD>`, M4). Plan and parameter errors come back as HTTP 200 with a non-empty `errors` object |
 | Plan and budget | Pro plan: 7,500 requests/day, 300/minute. App budget `APISPORTS_DAILY_BUDGET` 1,000 (a safety cap), 10% reserve. Typical use: schedule 1–2, standings 1, seeding teams 2 (once), hourly score polling (A15). Local budget from M6: 30 (NFR-22) |
 | Mapping | `apisports_team_id` → `teams.id`; unmapped teams or games are logged and skipped (FR-LS10, FR-ST2) |
-| Mapping | Times come as a UTC `timestamp`; a `time` of `00:00` marks a TBD kickoff and `date` is then the game day. Stages: `Pre Season` (dropped, BR-W3), `Regular Season` (`Week N`), `Post Season` (`Wild Card`, `Divisional Round`, `Conference Championships`, `Super Bowl` → weeks 19–22; `Pro Bowl` dropped). Undecided playoff teams have ID 0. Status codes `NS`, `Q1`–`Q4`, `OT`, `HT`, `FT`, `AOT`, `PST`, `CANC` map to `scheduled`/`in_progress`/`halftime`/`final`/`final_ot`/`postponed`/`cancelled` (`NS`, `FT`, `AOT` seen in T4; the live codes are confirmed in M4) |
+| Mapping | Times come as a UTC `timestamp`; TBD kickoffs are listed at `00:00` with `date` as the game day. Because 00:00 UTC is also a real 8:00 PM EDT kickoff, a regular-season game counts as TBD only when two or more games share `00:00` on that date (playoff placeholders at `00:00` are always TBD). Stages: `Pre Season` (dropped, BR-W3), `Regular Season` (`Week N`), `Post Season` (`Wild Card`, `Divisional Round`, `Conference Championships`, `Super Bowl` → weeks 19–22; `Pro Bowl` dropped). The 2026 Super Bowl is listed as `Pro Bowl`: when no entry is named `Super Bowl`, a `Pro Bowl` entry that is the season's last game and comes after the conference championships is mapped to week 22. Undecided playoff teams have ID 0. Status codes `NS`, `Q1`–`Q4`, `OT`, `HT`, `FT`, `AOT`, `PST`, `CANC` map to `scheduled`/`in_progress`/`halftime`/`final`/`final_ot`/`postponed`/`cancelled` (`NS`, `FT`, `AOT` seen in T4; the live codes are confirmed in M4) |
 | Contract tests | Recorded real responses (sanitized) in `tests/contract/fixtures/apisports/` |
 
 ### 8.4 Ticketmaster Discovery (tickets)
@@ -925,6 +925,7 @@ Settings are loaded by `pydantic-settings` from environment variables (`.env` lo
 | `GAME_WINDOW_LEAD_MIN`, `GAME_WINDOW_MAX_H` | 15 / 4.5 | FR-LS5, A14 |
 | `SCHEDULE_SYNC_UTC`, `STANDINGS_SYNC_UTC`, `RETENTION_CLEANUP_UTC` | `09:00` / `10:00` / `08:00` | §10.2 |
 | `PLANNING_WINDOW_DAYS`, `AGENT_MAX_TURNS_PER_SESSION` | 30 / 20 | FR-SC8, FR-AG13 |
+| `SEASON_END_FALLBACK_DAYS` | 30 | BR-W2: until the Super Bowl is listed, a season ends this many days after its last known game |
 | `RANK_WEIGHTS`, `COMFORT_PRICE_{LESS,MEDIUM,MORE}`, `TRAVEL_RADIUS_{LOW,MEDIUM,HIGH}_MI`, `BAR_DISTANCE_NORM_MI`, `RANK_TIE_THRESHOLD` | 0.4,0.4,0.2 / 75,150,300 / 75,400,1200 / 10 / 0.02 | §9.1 (the viewing-fit matrix and bar/home spending constants live in a versioned config file) |
 | `TICKETMASTER_API_KEY`, `TICKETMASTER_DAILY_BUDGET`, `TICKETMASTER_CACHE_TTL_S` | — / 4000 / 600 | |
 | `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACES_DAILY_CAP` | — / 30 | §8.5 |
