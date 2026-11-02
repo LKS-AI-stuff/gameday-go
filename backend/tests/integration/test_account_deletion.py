@@ -1,6 +1,7 @@
 """Account deletion (FR-A4): every M1 user row goes, then the sign-in account."""
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 import asyncpg
 import httpx
@@ -41,7 +42,7 @@ async def onboarded_user(
                 {
                     "name": "onboarding_completed",
                     "platform": "web",
-                    "client_ts": "2026-10-29T12:00:00Z",
+                    "client_ts": datetime.now(UTC).isoformat(),
                 }
             ]
         },
