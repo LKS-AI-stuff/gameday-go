@@ -136,3 +136,16 @@ async def test_jwks_is_cached(
         await verifier.verify(make_token())
         await verifier.verify(make_token())
     assert route.call_count == 1
+
+
+async def test_first_token_fetches_jwks_right_after_boot(
+    verifier: TokenVerifier,
+    jwks: dict[str, Any],
+    make_token: TokenFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Monotonic time starts near zero on a fresh host (a CI runner, a new container).
+    monkeypatch.setattr("app.core.auth.time.monotonic", lambda: 5.0)
+    sub = str(uuid.uuid4())
+    claims = await verify(verifier, jwks, make_token(sub=sub))
+    assert claims.user_id == uuid.UUID(sub)

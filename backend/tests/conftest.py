@@ -43,6 +43,8 @@ def make_settings(**overrides: Any) -> Settings:
         "supabase_url": TEST_SUPABASE_URL,
         "cors_origins": "",
         "apisports_key": "test-apisports-key",
+        # Explicit, so CI's PROVIDER_APISPORTS_ENABLED=false (for the app itself) doesn't leak in.
+        "provider_apisports_enabled": True,
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)

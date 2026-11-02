@@ -52,7 +52,9 @@ class TokenVerifier:
         self._http = http_client or httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0))
         self._jwks_ttl_s = jwks_ttl_s
         self._keys: dict[str, jwt.PyJWK] = {}
-        self._fetched_at = 0.0
+        # None until the first successful fetch. Not 0.0: monotonic time starts near zero on a
+        # freshly booted host, which made the first minute's tokens look already fetched-for.
+        self._fetched_at: float | None = None
         self._lock = asyncio.Lock()
 
     async def aclose(self) -> None:
@@ -110,14 +112,19 @@ class TokenVerifier:
         return key.key
 
     async def _jwk(self, kid: str) -> jwt.PyJWK | None:
-        now = time.monotonic()
-        stale = now - self._fetched_at > self._jwks_ttl_s
-        unknown = kid not in self._keys and now - self._fetched_at > JWKS_MIN_REFRESH_S
+        age = self._age()
+        stale = age is None or age > self._jwks_ttl_s
+        unknown = kid not in self._keys and (age is None or age > JWKS_MIN_REFRESH_S)
         if stale or unknown:
             async with self._lock:
-                if time.monotonic() - self._fetched_at > JWKS_MIN_REFRESH_S or not self._keys:
+                age = self._age()
+                if age is None or age > JWKS_MIN_REFRESH_S or not self._keys:
                     await self._refresh()
         return self._keys.get(kid)
+
+    def _age(self) -> float | None:
+        """Seconds since the keys were last fetched, or None if they never were."""
+        return None if self._fetched_at is None else time.monotonic() - self._fetched_at
 
     async def _refresh(self) -> None:
         try:
